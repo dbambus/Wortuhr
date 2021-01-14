@@ -53,12 +53,6 @@ public:
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t getMatrix(uint8_t col, uint8_t row) override {
-        return matrix[col][row];
-    };
-
-    //------------------------------------------------------------------------------
-
     virtual const uint16_t getRMatrix(uint16_t index) override { return 0; };
 
     //------------------------------------------------------------------------------
@@ -78,7 +72,7 @@ public:
 	//------------------------------------------------------------------------------
 
 	virtual const uint16_t COLS_MATRIX() override { return 11; };
-	
+
     //------------------------------------------------------------------------------
 
     virtual const uint16_t ROWS_MATRIX() override { return 11; };

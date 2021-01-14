@@ -20,7 +20,12 @@ public:
 
     virtual const uint16_t getRMatrix(uint16_t index) = 0;
 
-    virtual const uint16_t getMatrix(uint8_t col, uint8_t row) = 0;
+    virtual const uint16_t getMatrix(uint8_t col, uint8_t row) {
+		if (row%2 == 0){
+			col = COLS_MATRIX() - col - 1;
+		}
+		return col*row;
+    };
 
     virtual const uint16_t getMinArr(uint8_t col, uint8_t row) = 0;
 };

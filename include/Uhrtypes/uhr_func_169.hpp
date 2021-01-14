@@ -52,7 +52,7 @@ public:
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t getMatrix(uint8_t col, uint8_t row) override {
+    const uint16_t getMatrix(uint8_t col, uint8_t row) override {
         return matrix[col][row];
     };
 
