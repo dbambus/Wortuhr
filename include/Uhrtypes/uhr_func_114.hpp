@@ -82,23 +82,23 @@ public:
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t NUM_PIXELS() override { return 114; };
+    virtual inline const uint16_t NUM_PIXELS() override { return 114; };
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t NUM_SMATRIX() override { return 114; };
+    virtual inline const uint16_t NUM_SMATRIX() override { return 114; };
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t ROWS_MATRIX() override { return 11; };
+    virtual inline const uint16_t ROWS_MATRIX() override { return 11; };
 
 	//------------------------------------------------------------------------------
 
-	virtual const uint16_t COLS_MATRIX() override { return 11; };
+	virtual inline const uint16_t COLS_MATRIX() override { return 11; };
 
     //------------------------------------------------------------------------------
 
-    virtual const uint16_t NUM_RMATRIX() override { return 0; };
+    virtual inline const uint16_t NUM_RMATRIX() override { return 0; };
 
     //------------------------------------------------------------------------------
 

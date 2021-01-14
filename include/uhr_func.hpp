@@ -254,10 +254,10 @@ static inline void led_clear_pixel(uint16_t i) {
 //------------------------------------------------------------------------------
 
 void led_clear() {
-    for (uint16_t i = 0; i < usedUhrType->NUM_PIXELS(); i++) {
-        Word_array[i] = 255;
-        Word_array_transition_old2zero[i] = 255;
-        Word_array_transition_zero2new[i] = 255;
+    for (uint16_t i = 0; i < 18; i++) {
+        Word_array[i] = 0;
+        //Word_array_transition_old2zero[i] = 255;
+        //Word_array_transition_zero2new[i] = 255;
     }
     for (uint16_t i = 0; i < usedUhrType->NUM_PIXELS(); i++) {
         led_clear_pixel(i);
@@ -292,14 +292,27 @@ static void transition_helligkeit(uint8_t &rr, uint8_t &gg, uint8_t &bb,
 
 //------------------------------------------------------------------------------
 
+bool isInWordArray(uint32_t i){
+	uint8_t row = i / usedUhrType->COLS_MATRIX();
+	uint8_t col = i % usedUhrType->COLS_MATRIX();
+	uint32_t check = 0;
+	if (row%2 == 0){
+		col = usedUhrType->COLS_MATRIX() - 1 - col;
+	}
+	check = 1 << col;
+	return check&Word_array[row];
+}
+
+//------------------------------------------------------------------------------
+
 static void led_set() {
     uint8_t rr, gg, bb, ww;
     bool use_new_array = false;
     set_helligkeit(rr, gg, bb, ww, Foreground);
     for (uint16_t i = 0; i < usedUhrType->NUM_PIXELS(); i++) {
-        led_set_pixel(rr, gg, bb, ww, Word_array_old[i]);
+        if(isInWordArray(i)){led_set_pixel(rr, gg, bb, ww, Word_array[i]);}
     }
-    for (uint8_t ii = 0; ii < 20; ii++) {
+    /*for (uint8_t ii = 0; ii < 20; ii++) {
         transition_helligkeit(rr, gg, bb, ww, transition_array[ii]);
         for (uint16_t i = 0; i < usedUhrType->NUM_PIXELS(); i++) {
             if (Word_array_transition_old2zero[i] != 255 &&
@@ -315,9 +328,9 @@ static void led_set() {
         if (transition_array[ii] == 0) {
             use_new_array = true;
         }
-    }
+    }*/
     led_show();
-    delay(tansition_time);
+    //delay(tansition_time);
 }
 
 //------------------------------------------------------------------------------
@@ -329,7 +342,7 @@ static void copy_array(const uint16_t source[], uint16_t destination[]) {
 }
 
 //------------------------------------------------------------------------------
-
+/*
 static bool changes_in_array() {
     bool return_value = false;
     for (uint16_t i = 0; i < usedUhrType->NUM_PIXELS(); i++) {
@@ -343,7 +356,7 @@ static bool changes_in_array() {
         }
     }
     return return_value;
-}
+}*/
 
 //------------------------------------------------------------------------------
 // HSV to RGB 8Bit
@@ -1494,10 +1507,10 @@ static void show_zeit() {
         show_wetter();
     }
 
-    if (changes_in_array() == true) {
+    //if (changes_in_array() == true) {
         led_set();
-        copy_array(Word_array, Word_array_old);
-    } else if (G.prog == COMMAND_MODE_WORD_CLOCK) {
-        led_set();
-    }
+    //   copy_array(Word_array, Word_array_old);
+    //} else if (G.prog == COMMAND_MODE_WORD_CLOCK) {
+    //    led_set();
+    //}
 }
