@@ -2,7 +2,6 @@
 
 class UHR_125_t : public iUhrType {
 public:
-
     //------------------------------------------------------------------------------
 
     const uint16_t min_arr[2][4] = {
@@ -41,7 +40,7 @@ public:
 
     //------------------------------------------------------------------------------
 
-	virtual inline const uint16_t COLS_MATRIX() override { return 11; };
+    virtual inline const uint16_t COLS_MATRIX() override { return 11; };
 
     //------------------------------------------------------------------------------
 

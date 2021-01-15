@@ -2,7 +2,6 @@
 
 class UHR_169_t : public iUhrType {
 public:
-
     //------------------------------------------------------------------------------
 
     const uint16_t smatrix[121] = {
@@ -63,7 +62,7 @@ public:
 
     //------------------------------------------------------------------------------
 
-	virtual inline const uint16_t COLS_MATRIX() override { return 11; };
+    virtual inline const uint16_t COLS_MATRIX() override { return 11; };
 
     //------------------------------------------------------------------------------
 

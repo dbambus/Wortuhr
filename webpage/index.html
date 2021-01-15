@@ -204,7 +204,8 @@
                         <div class="pure-u-1 pure-u-lg-3-4"><input id="slider-brightness" type="range" min="1" max="10" value="1"></div>
                     </div>
                     <div class="pure-g speed">
-                        <div class="pure-u-1 pure-u-lg-1-4"><label class="slider-label" for="slider-speed">Geschwindigkeit <span class="value" id="slider-speed-value">0</span></label></div>
+                        <div class="pure-u-1 pure-u-lg-1-4"><label class="slider-label" for="slider-speed">Geschwindigkeit <span class="value"
+                                                                                                                                 id="slider-speed-value">0</span></label></div>
                         <div class="pure-u-1 pure-u-lg-3-4"><input id="slider-speed" type="range" min="0" max="40" value="0"></div>
                     </div>
                     <div class="pure-g leds">
@@ -213,7 +214,8 @@
                         <div class="pure-u-1 pure-u-lg-3-4"><input id="slider-leds" type="range" min="5" max="100" value="100"></div>
                     </div>
                     <div class="pure-g position">
-                        <div class="pure-u-1 pure-u-lg-1-4"><label class="slider-label" for="slider-position">Positon <span class="value" id="slider-position-value">0</span></label></div>
+                        <div class="pure-u-1 pure-u-lg-1-4"><label class="slider-label" for="slider-position">Positon <span class="value"
+                                                                                                                            id="slider-position-value">0</span></label></div>
                         <div class="pure-u-1 pure-u-lg-3-4"><input id="slider-position" type="range" min="1" max="100" value="100"></div>
                     </div>
                 </div>
@@ -515,10 +517,12 @@
                             <form class="pure-form pure-form-aligned">
                                 <fieldset>
                                     <div class="pure-control-group">
-                                        <label for="owm-api-key">OpenWeatherMap API-Schluessel</label><input id="owm-api-key" type="text" minlength="32" maxlength="32" placeholder="API-Schlüssel">
+                                        <label for="owm-api-key">OpenWeatherMap API-Schluessel</label><input id="owm-api-key" type="text" minlength="32" maxlength="32"
+                                                                                                             placeholder="API-Schlüssel">
                                     </div>
                                     <div class="pure-control-group">
-                                        <label for="owm-city-id">OpenWeatherMap City ID</label><input id="owm-city-id" type="text" minlength="7" maxlength="7" placeholder="City ID">
+                                        <label for="owm-city-id">OpenWeatherMap City ID</label><input id="owm-city-id" type="text" minlength="7" maxlength="7"
+                                                                                                      placeholder="City ID">
                                     </div>
                                     <div class="pure-controls">
                                         <button id="weather-button" class="pure-button">Daten speichern</button>
@@ -705,22 +709,22 @@
                             <form class="pure-form pure-form-aligned">
                                 <fieldset>
                                     <legend>
-                                    Was soll beim Neustart passieren?
+                                        Was soll beim Neustart passieren?
                                     </legend>
                                     <div class="pure-control-group">
-                                        <input type="checkbox" id="boot-led-blink" />
+                                        <input type="checkbox" id="boot-led-blink"/>
                                         <label for="boot-led-blink" class="pure-checkbox">LEDs kurz aufblitzen</label>
                                     </div>
                                     <div class="pure-control-group">
-                                        <input type="checkbox" id="boot-led-sweep" />
+                                        <input type="checkbox" id="boot-led-sweep"/>
                                         <label for="boot-led-sweep" class="pure-checkbox">Alle LEDs einmal durchlaufen lassen</label>
                                     </div>
                                     <div class="pure-control-group">
-                                        <input type="checkbox" id="boot-show-wifi" />
+                                        <input type="checkbox" id="boot-show-wifi"/>
                                         <label for="boot-show-wifi" class="pure-checkbox">WiFi Symbol während der Suche anzeigen</label>
                                     </div>
                                     <div class="pure-control-group">
-                                        <input type="checkbox" id="boot-show-ip" />
+                                        <input type="checkbox" id="boot-show-ip"/>
                                         <label for="boot-show-ip" class="pure-checkbox">IP Addresse anzeigen</label>
                                     </div>
                                     <div class="pure-controls">
@@ -739,13 +743,13 @@
                             <form class="pure-form pure-form-aligned">
                                 <fieldset>
                                     <legend>
-                                    Neukonfiguration erstellt ein eigenes WLAN.
-                                    Mit diesem verbinden, dann kann das Zielnetz ausgewählt werden.
+                                        Neukonfiguration erstellt ein eigenes WLAN.
+                                        Mit diesem verbinden, dann kann das Zielnetz ausgewählt werden.
                                     </legend>
 
                                     <div class="pure-control-group">
                                         <label for="ssid">SSID</label>
-                                        <input id="ssid" type="text" placeholder="SSID" readonly />
+                                        <input id="ssid" type="text" placeholder="SSID" readonly/>
                                     </div>
 
                                     <div class="pure-control-group">
@@ -771,7 +775,8 @@
                 </div>
                 <div class="box">
                     <h2>Smart Home</h2>
-                    <p>Die Software der Wordclock bietet die Möglichkeit der Steuerung über die MQTT Schnittstelle. Hierbei kann man über sein bestehendes HomeAssistant Setup die Uhr einbinden, um rudimentäre Funktionen steuern zu können. Diese Funktion ist noch experimentell und wird stetig erweitert.</p>
+                    <p>Die Software der Wordclock bietet die Möglichkeit der Steuerung über die MQTT Schnittstelle. Hierbei kann man über sein bestehendes HomeAssistant Setup die
+                        Uhr einbinden, um rudimentäre Funktionen steuern zu können. Diese Funktion ist noch experimentell und wird stetig erweitert.</p>
                 </div>
                 <div class="pure-u-1 pure-u-lg-1-2">
 
@@ -806,10 +811,14 @@
                     <h1>Über</h1>
                 </div>
                 <div class="box">
-                    <p>Die Software dieser Wortuhr basiert auf der Wortuhr von <a href="https://web.archive.org/web/20180422160812/http://www.ulrichradig.de/home/index.php/projekte/wort-uhr-neu"> (Stand 2019) Ulrich Radig</a> und wird nun weiterentwickelt von <a
-                            href="https://github.com/Eisbaeeer">Lars Weimar</a>, <a href="https://github.com/Wandmalfarbe">Pascal Wagler</a>, <a href="https://github.com/dbambus">dbambus</a>,
-                        <a href="https://github.com/Flo455">Flo455</a>, <a href="https://github.com/Elektron79">Elektron79</a>, <a href="https://github.com/tali">tali</a> und <a href="https://github.com/masju1">masju1</a>.</p>
-                        <p>Ein Update der Software ist möglich, dazu bitte <a href="/update" onclick="javascript:event.target.port=81">hier</a> klicken.</p>
+                    <p>Die Software dieser Wortuhr basiert auf der Wortuhr von <a
+                            href="https://web.archive.org/web/20180422160812/http://www.ulrichradig.de/home/index.php/projekte/wort-uhr-neu"> (Stand 2019) Ulrich Radig</a> und wird
+                        nun weiterentwickelt von <a
+                                href="https://github.com/Eisbaeeer">Lars Weimar</a>, <a href="https://github.com/Wandmalfarbe">Pascal Wagler</a>, <a
+                                href="https://github.com/dbambus">dbambus</a>,
+                        <a href="https://github.com/Flo455">Flo455</a>, <a href="https://github.com/Elektron79">Elektron79</a>, <a href="https://github.com/tali">tali</a> und <a
+                                href="https://github.com/masju1">masju1</a>.</p>
+                    <p>Ein Update der Software ist möglich, dazu bitte <a href="/update" onclick="javascript:event.target.port=81">hier</a> klicken.</p>
                     <p>This project is open source licensed under the BSD 3-Clause License. Please see the LICENSE file for more information.</p>
                 </div>
 
