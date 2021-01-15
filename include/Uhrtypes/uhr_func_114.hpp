@@ -92,7 +92,7 @@ public:
 
     virtual inline const uint16_t ROWS_MATRIX() override { return 11; };
 
-	//------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------
 
 	virtual inline const uint16_t COLS_MATRIX() override { return 11; };
 
