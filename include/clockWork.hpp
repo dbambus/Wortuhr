@@ -1896,3 +1896,124 @@ void ClockWork::initBootLed() {
     ledClear();
     ledShow();
 }
+
+//------------------------------------------------------------------------------
+
+ClockWork::direction ClockWork::nextDir(direction dir, int d) {
+    // d = 0 -> continue straight on
+    // d = 1 -> turn LEFT
+    // d = 2 -> turn RIGHT
+    direction selection[3];
+    switch (dir) {
+    case right:
+        selection[0] = right;
+        selection[1] = up;
+        selection[2] = down;
+        break;
+    case left:
+        selection[0] = left;
+        selection[1] = down;
+        selection[2] = up;
+        break;
+    case up:
+        selection[0] = up;
+        selection[1] = left;
+        selection[2] = right;
+        break;
+    case down:
+        selection[0] = down;
+        selection[1] = right;
+        selection[2] = left;
+        break;
+    }
+    direction next = selection[d];
+    return next;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::spiral(uint8_t size) {
+    static direction dir1;
+    static int x;
+    static int y;
+    static int counter1;
+    static int countStep;
+    static int countEdge;
+    static int countCorner;
+    static bool breiter;
+    static bool empty = false;
+    const int8_t dx[] = {1, -1, 0, 0};
+    const int8_t dy[] = {0, 0, -1, 1};
+
+    static float hue = 0;
+    float displayedHue;
+
+    displayedHue = hue;
+
+    if (G.prog_init) {
+        dir1 = down;
+        x = usedUhrType->COLS_MATRIX() / 2 - 1;
+        y = (usedUhrType->ROWS_MATRIX() - 1) / 2;
+        if (!empty)
+            ledClear();
+        counter1 = 0;
+        countStep = 0;
+        countEdge = 1;
+        countCorner = 0;
+        breiter = true;
+        G.prog_init = 0;
+    }
+
+    if (countStep == usedUhrType->NUM_SMATRIX() - 4) {
+        countStep = 0;
+        if (!empty) {
+            empty = true;
+        } else {
+            empty = false;
+        }
+        dir1 = down;
+        counter1 = 0;
+        countStep = 0;
+        countEdge = 1;
+        countCorner = 0;
+        breiter = true;
+        x = usedUhrType->COLS_MATRIX() / 2 - 1;
+        y = (usedUhrType->ROWS_MATRIX() - 1) / 2;
+        // End reached return 1
+    } else {
+        if (empty) {
+            ledClearPixel(usedUhrType->getFrontMatrix(x, y));
+        } else {
+            ledSetPixelHsb(usedUhrType->getFrontMatrix(x, y), displayedHue, 100,
+                           G.hell);
+            displayedHue = displayedHue + 360.0 / usedUhrType->NUM_SMATRIX();
+            checkIfHueIsOutOfBound(displayedHue);
+        }
+        if (countCorner == 2 && breiter) {
+            countEdge += 1;
+            breiter = false;
+        }
+        if (counter1 >= countEdge) {
+            dir1 = nextDir(dir1, 1);
+            counter1 = 0;
+            countCorner++;
+        }
+        if (countCorner >= 4) {
+            countCorner = 0;
+            countEdge += 1;
+            breiter = true;
+        }
+        ledShow();
+
+        x += dx[dir1];
+        y += dy[dir1];
+        // logger.logString("x: " + String(x) + ", y: " + String(y) + "c: " +
+        // String(color) + "\n");
+        counter1++;
+        countStep++;
+        hue++;
+        checkIfHueIsOutOfBound(hue);
+    }
+}
+
+//------------------------------------------------------------------------------

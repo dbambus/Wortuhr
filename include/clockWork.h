@@ -4,11 +4,17 @@
 
 class ClockWork {
 private:
+    enum direction { right, left, up, down };
+
+private:
     inline void checkIfHueIsOutOfBound(float &hue) {
         if (hue > 360) {
             hue = 0;
         }
     }
+
+    direction nextDir(direction dir, int d);
+    void spiral(uint8_t size);
 
     void ledSetPixel(uint8_t rr, uint8_t gg, uint8_t bb, uint8_t ww,
                      uint16_t i);
