@@ -115,6 +115,7 @@ var COMMAND_SET_TIME_MANUAL = 86; /* 87 is unused */
 var COMMAND_SET_COLORTYPE = 88;
 var COMMAND_SET_UHRTYPE = 89;
 var COMMAND_SET_WEATHER_DATA = 90;
+var COMMAND_SET_HOMEKIT = 91;
 var COMMAND_SET_HOSTNAME = 92;
 var COMMAND_SET_SETTING_SECOND = 93;
 var COMMAND_SET_MINUTE = 94;
@@ -949,6 +950,12 @@ $.ready(function() {
 
 		sendCmd(COMMAND_SET_MQTT, nstr(MQTTState) + nstr5(MQTTPort) + getPaddedString(MQTTServer, DATA_MQTT_RESPONSE_TEXT_LENGTH) + getPaddedString(MQTTUser, DATA_MQTT_RESPONSE_TEXT_LENGTH) + getPaddedString(MQTTPass, DATA_MQTT_RESPONSE_TEXT_LENGTH) + getPaddedString(MQTTClientId, DATA_MQTT_RESPONSE_TEXT_LENGTH) + getPaddedString(MQTTTopic, DATA_MQTT_RESPONSE_TEXT_LENGTH));
 		debugMessage("MQTT config" + debugMessageReconfigured);
+	});
+	$("#homekit-button").on("click", function() {
+		// HomeKitState = $("#mqtt-state").get("checked") | 0;
+
+		// sendCmd(COMMAND_SET_HOMEKIT, nstr(HomeKitState));
+		debugMessage("HomeKit config" + debugMessageReconfigured);
 	});
 	$("[id*='dialect']").on("change", function() {
 		dialect[0] = $("#dialect-0").get("value");

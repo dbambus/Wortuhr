@@ -43,6 +43,10 @@ struct MqttData {
     uint16_t port;
 };
 
+struct HomeKitData {
+    bool state;
+};
+
 struct OpenWeatherMapData {
     char apikey[35];
     char cityid[8];
@@ -124,6 +128,8 @@ struct GLOBAL {
     uint8_t Colortype;
 
     MqttData mqtt;
+
+    HomeKitData homeKit;
 
     OpenWeatherMapData openWeatherMap;
 
@@ -221,6 +227,7 @@ enum CommandWords {
     COMMAND_SET_COLORTYPE = 88,
     COMMAND_SET_UHRTYPE = 89,
     COMMAND_SET_WEATHER_DATA = 90,
+    COMMAND_SET_HOMEKIT = 91,
     COMMAND_SET_HOSTNAME = 92,
     COMMAND_SET_SETTING_SECOND = 93,
     COMMAND_SET_MINUTE = 94,

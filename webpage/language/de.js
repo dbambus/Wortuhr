@@ -221,7 +221,7 @@ let TRANSLATION_DE_DE = {
 		"h1": "Smart Home",
 		"mqtt": {
 			"h2": "MQTT",
-			"text": "Die Software der Wortuhr bietet die Möglichkeit der Steuerung über die MQTT-Schnittstelle. Hierbei kann man über sein bestehendes Home-Assistant-Setup die Uhr einbinden, um rudimentäre Funktionen steuern zu können. Diese Funktion ist noch experimentell und wird stetig erweitert.",
+			"text": "Die Software der Wortuhr bietet die Möglichkeit der Steuerung über die MQTT-Schnittstelle. Hierbei kann man über sein bestehendes Home-Assistant-Setup die Uhr einbinden, um rudimentäre Funktionen steuern zu können.",
 			"activate": "Aktiviere MQTT",
 			"server": "Serveradresse",
 			"port": "Port",
@@ -229,6 +229,12 @@ let TRANSLATION_DE_DE = {
 			"password": "Passwort",
 			"client-id": "Client-ID",
 			"topic": "Topic",
+			"save": "Einstellungen Speichern"
+		},
+		"homekit": {
+			"h2": "Apple HomeKit",
+			"text": "Sehr frühe Implementierung von Apple HomeKit. Diese Funktion ist noch im Beta Stadium und wird bald erweitert.",
+			"activate": "Aktiviere HomeKit",
 			"save": "Einstellungen Speichern"
 		}
 	},

@@ -230,6 +230,12 @@ let TRANSLATION_NL = {
 			"client-id": "Client ID",
 			"topic": "Topic",
 			"save": "Opslaan"
+		},
+		"homekit": {
+			"h2": "Apple HomeKit",
+			"text": "Zeer vroege implementatie van Apple HomeKit. Deze functie bevindt zich nog in de bètafase en wordt binnenkort uitgebreid.",
+			"activate": "Activeer HomeKit",
+			"save": "Opslaan"
 		}
 	},
 	"about": {

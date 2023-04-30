@@ -230,6 +230,12 @@ let TRANSLATION_EN_US = {
 			"client-id": "Client ID",
 			"topic": "Topic",
 			"save": "Save Settings"
+		},
+		"homekit": {
+			"h2": "Apple HomeKit",
+			"text": "Very early implementation of Apple HomeKit. This function is still in the beta stage and will be expanded soon.",
+			"activate": "Activate HomeKit",
+			"save": "Save Settings"
 		}
 	},
 	"about": {

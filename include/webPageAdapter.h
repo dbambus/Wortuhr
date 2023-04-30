@@ -407,6 +407,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 
             //------------------------------------------------------------------------------
 
+        case COMMAND_SET_HOMEKIT: {
+            G.conf = COMMAND_SET_HOMEKIT;
+            if (!G.homeKit.state) {
+                G.progInit = true;
+            }
+            G.homeKit.state = split(payload, 3);
+            break;
+        }
+
+            //------------------------------------------------------------------------------
+
         case COMMAND_SET_TIME_MANUAL: {
             G.conf = COMMAND_SET_TIME_MANUAL;
             time_t old = time(nullptr);
