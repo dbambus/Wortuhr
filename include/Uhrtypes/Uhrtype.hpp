@@ -192,6 +192,10 @@ public:
 
     virtual const bool has24HourLayout() { return false; }
 
+    virtual std::vector<MinuteVariant> getMinuteVariants() {
+        return {MinuteVariant::Off, MinuteVariant::LED4x, MinuteVariant::LED7x};
+    }
+
     virtual const bool hasWeatherLayout() { return false; }
 
     virtual const bool hasSecondsFrame() { return false; }

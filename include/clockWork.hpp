@@ -851,6 +851,15 @@ void ClockWork::setClock() {
     if (!G.languageVariant[NotShowItIs]) {
         DetermineWhichItIsToShow(_hour + offsetHour);
     }
+
+        auto minVariants = usedUhrType->getMinuteVariants();
+
+    Serial.print("Available minute variants: ");
+    for (auto variant : minVariants) {
+        Serial.print((uint8_t)variant);
+        Serial.print(" ");
+    }
+    Serial.println();
 }
 
 //------------------------------------------------------------------------------
