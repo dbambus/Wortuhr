@@ -516,7 +516,8 @@
                                 <option value="1" data-i18next="settings.led-type.ws2812-grb"></option>
                                 <option value="2" data-i18next="settings.led-type.ws2812-rgb"></option>
                                 <option value="3" data-i18next="settings.led-type.ws2812-rbg"></option>
-                                <option value="4" data-i18next="settings.led-type.sk6812-brgw"></option>
+                                <option value="4" data-i18next="settings.led-type.ws2812-bgr"></option>
+                                <option value="5" data-i18next="settings.led-type.sk6812-brgw"></option>
                             </select>
                             </div>
                             <div class="pure-controls">
@@ -569,7 +570,7 @@
                     <h2 data-i18next="settings.brightness.h2"></h2>
                     <form class="pure-form pure-form-aligned">
                         <div class="pure-control-group">
-                            <label for="auto-ldr-enabled" data-i18next="settings.brightness.mode"></label><select id="auto-ldr-enabled" size="1">
+                            <label for="auto-bright-enabled" data-i18next="settings.brightness.mode"></label><select id="auto-bright-enabled" size="1">
                                 <option value="1" data-i18next="settings.brightness.automatic"></option>
                                 <option value="0" data-i18next="settings.brightness.manual"></option>
                             </select>
@@ -665,14 +666,17 @@
                         <div class="specific-layout-brightness-auto">
                             <br>
                             <div class="pure-control-group">
-                                <label for="auto-ldr-value" data-i18next="settings.brightness.ldr-value"></label><input id="auto-ldr-value" type="text" value=" " readonly>
+                                <label for="auto-bright-sensor" data-i18next="settings.brightness.value-sensor"></label><input id="auto-bright-sensor" type="text" value=" " readonly>
+                                <label for="auto-bright-gain" data-i18next="settings.brightness.value-gain"></label><input id="auto-bright-gain" type="text" value=" " readonly>
                             </div>
                             <br>
+                            <legend data-i18next="settings.brightness.help-offset"></legend>
                             <div class="pure-control-group">
-                                <label for="auto-ldr-bright" data-i18next="settings.brightness.value-bright"></label><input id="auto-ldr-bright" type="number" min="0" max="255">
+                                <label for="auto-bright-offset" data-i18next="settings.brightness.value-offset"></label><input id="auto-bright-offset" type="number" min="0" max="255">
                             </div>
+                            <legend data-i18next="settings.brightness.help-slope"></legend>
                             <div class="pure-control-group">
-                                <label for="auto-ldr-dark" data-i18next="settings.brightness.value-dark"></label><input id="auto-ldr-dark" type="number" min="0" max="255">
+                                <label for="auto-bright-slope" data-i18next="settings.brightness.value-slope"></label><input id="auto-bright-slope" type="number" min="0" max="255">
                             </div>
                             <!-- Specific Brightness-automatic End-->
                         </div>

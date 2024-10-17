@@ -187,6 +187,7 @@ let TRANSLATION_NL = {
 			"ws2812-grb": "WS2812 GRB",
 			"ws2812-rgb": "WS2812 RGB",
 			"ws2812-rbg": "WS2812 RBG",
+			"ws2812-bgr": "WS2812 BGR",
 			"sk6812-brgw": "SK6812 RGBW",
 			"save": "Opslaan"
 		},
@@ -226,9 +227,9 @@ let TRANSLATION_NL = {
 			"eighteen-to-twenty": "18:00 – 19:59",
 			"twenty-to-twenty-two": "20:00 – 21:59",
 			"twenty-two-to-zero": "22:00 – 23:59",
-			"ldr-value": "Huidige helderheid volgens sensor",
-			"value-bright": "Licht (0 – 255)",
-			"value-dark": "Donker (0 – 255)"
+			"value-sensor": "Huidige helderheid volgens sensor",
+			"value-offset": "Licht (0 – 255)",
+			"value-slope": "Donker (0 – 255)"
 		},
 		"hostname": {
 			"h2": "Hostnaam",

@@ -211,6 +211,7 @@ let TRANSLATION_EN_US = {
 			"ws2812-grb": "WS2812 GRB",
 			"ws2812-rgb": "WS2812 RGB",
 			"ws2812-rbg": "WS2812 RBG",
+			"ws2812-bgr": "WS2812 BGR",
 			"sk6812-brgw": "SK6812 RGBW",
 			"save": "Save Setting"
 		},
@@ -250,9 +251,9 @@ let TRANSLATION_EN_US = {
 			"eighteen-to-twenty": "18:00 – 19:59",
 			"twenty-to-twenty-two": "20:00 – 21:59",
 			"twenty-two-to-zero": "22:00 – 23:59",
-			"ldr-value": "Current Brightness from the Photoresistor (LDR)",
-			"value-bright": "Value “Bright” (0 – 255)",
-			"value-dark": "Value “Dark” (0 – 255)"
+			"value-sensor": "Current Brightness from the Photoresistor (LDR)",
+			"value-offset": "Value “Bright” (0 – 255)",
+			"value-slope": "Value “Dark” (0 – 255)"
 		},
 		"hostname": {
 			"h2": "Hostname",

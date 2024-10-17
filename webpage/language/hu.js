@@ -184,6 +184,7 @@ let TRANSLATION_HU = {
 			"ws2812-grb": "WS2812 GRB",
 			"ws2812-rgb": "WS2812 RGB",
 			"ws2812-rbg": "WS2812 RBG",
+			"ws2812-bgr": "WS2812 BGR",
 			"sk6812-brgw": "SK6812 RGBW",
 			"save": "Beállítás mentése"
 		},
@@ -223,9 +224,9 @@ let TRANSLATION_HU = {
 			"eighteen-to-twenty": "18:00 – 19:59",
 			"twenty-to-twenty-two": "20:00 – 21:59",
 			"twenty-two-to-zero": "22:00 – 23:59",
-			"ldr-value": "A fotóellenállás aktuális világossága (LDR)",
-			"value-bright": "Érték „Világos“ (0 – 255)",
-			"value-dark": "Érték „Sötét“ (0 – 255)"
+			"value-sensor": "A fotóellenállás aktuális világossága (LDR)",
+			"value-offset": "Érték „Világos“ (0 – 255)",
+			"value-slope": "Érték „Sötét“ (0 – 255)"
 		},
 		"hostname": {
 			"h2": "Host-név",
