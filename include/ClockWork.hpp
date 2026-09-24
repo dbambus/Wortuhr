@@ -3,6 +3,7 @@
 #include "I2CBus.h"
 #include "NeoMultiFeature.hpp"
 #include "OpenWeatherMap.h"
+#include "Render/DisplayBrightness.h"
 #include "SensitiveData.h"
 #include "Transitions/Transition.h"
 #include "WordClockState.h"
@@ -179,7 +180,7 @@ void ClockWork::increaseHardwareButtonBrightness() {
         }
     }
 
-    G.color[Foreground].B = brightness;
+    setDisplayBrightness(G.color, brightness);
     requestHardwareButtonDisplayRefresh();
 }
 
