@@ -1,8 +1,8 @@
 let TRANSLATION_HU = {
 	"title": "Szövegóra",
 	"menu": {
-		"aria-show-menu": "Menü mutatása",
-		"aria-hide-menu": "Menü elrejtése",
+		"more": "Továbbiak",
+		"view": "Kijelző",
 		"language": {
 			"label": "Nyelv",
 			"de": "🇩🇪 Német",
@@ -22,9 +22,19 @@ let TRANSLATION_HU = {
 		"button": "Újraindítás",
 		"text": "Az újraindítás ajánlott a módosított beállítás alkalmazásához."
 	},
+	"status": {
+		"online": "Csatlakoztatva",
+		"offline": "Nincs kapcsolat"
+	},
 	"colors": {
 		"h1": "Színek",
-		"with-background": "Háttérszínnel"
+		"hint": "A változtatások azonnal az órára kerülnek.",
+		"target": "Mit színezzünk?",
+		"hue": "Színárnyalat",
+		"saturation": "Telítettség",
+		"brightness": "Fényerő",
+		"favorites": "Kedvencek",
+		"off": "Kikapcsolás"
 	},
 	"functions": {
 		"h1": "Funkciók",

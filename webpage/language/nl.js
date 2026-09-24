@@ -1,8 +1,8 @@
 let TRANSLATION_NL = {
 	"title": "Woordklok",
 	"menu": {
-		"aria-show-menu": "Menu tonen",
-		"aria-hide-menu": "Menu verbergen",
+		"more": "Meer",
+		"view": "Weergave",
 		"language": {
 			"label": "Taal",
 			"de": "🇩🇪 Duits",
@@ -22,9 +22,19 @@ let TRANSLATION_NL = {
 		"button": "Herstart",
 		"text": "Een herstart wordt aanbevolen om de gewijzigde instelling toe te passen."
 	},
+	"status": {
+		"online": "Verbonden",
+		"offline": "Niet verbonden"
+	},
 	"colors": {
 		"h1": "Kleuren",
-		"with-background": "Met achtergrondkleur"
+		"hint": "Wijzigingen worden direct naar de klok gestuurd.",
+		"target": "Wat inkleuren?",
+		"hue": "Tint",
+		"saturation": "Verzadiging",
+		"brightness": "Helderheid",
+		"favorites": "Favorieten",
+		"off": "Uitschakelen"
 	},
 	"functions": {
 		"h1": "Functies",

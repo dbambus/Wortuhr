@@ -171,11 +171,6 @@ module.exports = function(grunt) {
 					dest: "<%= settings.tempDirectory %>"
 				}, {
 					expand: true,
-					cwd: "node_modules/@jaames/iro/dist/",
-					src: ["iro.min.js"],
-					dest: "<%= settings.tempDirectory %>"
-				}, {
-					expand: true,
 					cwd: "node_modules/i18next",
 					src: ["i18next.min.js"],
 					dest: "<%= settings.tempDirectory %>"

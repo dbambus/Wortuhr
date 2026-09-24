@@ -1,40 +1,4 @@
 "use strict";
-const iro = window.iro; // require("@jaames/iro");
-(function(window, document) {
-
-	let layout = document.querySelector(".layout");
-	let menu = document.querySelector(".menu");
-	let menuLink = document.querySelector(".hamburger");
-
-	function toggleMenuEventHandler(event) {
-		// It's a link, so don't activate the link but do some JS instead
-		event.preventDefault();
-
-		const active = "active";
-		const menuIsOpen = menuLink.getAttribute("aria-expanded") === "true";
-
-		if (menuIsOpen) {
-			// Close menu
-			console.log("is open, closing");
-			menuLink.setAttribute("aria-expanded", "false");
-			menuLink.setAttribute("aria-label", i18next.t("menu.aria-show-menu"));
-			layout.classList.remove(active);
-			menu.classList.remove(active);
-		} else {
-			console.log("is closed, opening");
-			// Open menu
-			menuLink.setAttribute("aria-expanded", "true");
-			menuLink.setAttribute("aria-label", i18next.t("menu.aria-hide-menu"));
-			layout.classList.add(active);
-			menu.classList.add(active);
-		}
-	}
-
-	if (menuLink) {
-		menuLink.addEventListener("click", toggleMenuEventHandler);
-	}
-}(this, this.document));
-
 // minified.js dependency removed
 let debugMessageReconfigured = " was reconfigured.";
 let websocket;
@@ -159,8 +123,9 @@ const DATA_TEXT_SLOT_BYTES = 30;
 const DATA_TEXT_MAX_BYTES = DATA_TEXT_SLOT_BYTES - 1;
 const DEFAULT_TIMEZONE = "CET-1CEST,M3.5.0,M10.5.0/3";
 
-// color pickers
-let colorPicker;
+// color sliders
+let colorSendTimer = null;
+let colorSendPending = false;
 
 /**
  * Indicates local development of the webinterface.
@@ -233,7 +198,7 @@ function applyColorizeMode() {
 	const secondary = document.querySelector("label[for='colorwheel-gradient']");
 	if (secondary) secondary.style.display = showSecondary ? "" : "none";
 
-	const foregroundLabel = document.querySelector("label[for='colorwheel-foreground'] span");
+	const foregroundLabel = document.querySelector("label[for='colorwheel-foreground'] span[data-i18next]");
 	if (foregroundLabel) {
 		foregroundLabel.innerHTML = i18next.t(showSecondary ? "functions.color.primary" : "functions.color.foreground");
 	}
@@ -250,7 +215,7 @@ function applyColorizeMode() {
 function enableSpecific(cls, enbl) {
 	let items = document.getElementsByClassName(cls);
 	for (const item of items) {
-		item.style.display = enbl ? "block" : "none";
+		item.style.display = enbl ? "" : "none";
 	}
 }
 
@@ -276,25 +241,26 @@ function supportsMinuteDirection(supportedMinuteVariants) {
 	return (supportedMinuteVariants & (led4x | led7x)) !== 0;
 }
 
-// handle click events on the swatch
+function setI18nText(element, key) {
+	if (!element) return;
+	element.dataset.i18next = key;
+	if (window.i18next && i18next.isInitialized) {
+		element.innerHTML = i18next.t(key);
+	}
+}
 
-let swatchGrid = document.getElementById("swatch-grid");
-if (swatchGrid) {
-	swatchGrid.addEventListener("click", function(ext) {
-		let clickTarget = ext.target;
-		// read data-color attribute
-		if (clickTarget.dataset.color) {
-			// update the color picker
-			colorPicker.color.set(clickTarget.dataset.color);
-			changeColor(colorPicker.color);
-		}
-	});
+function setConnectionState(online) {
+	const conn = document.getElementById("conn");
+	if (conn) conn.classList.toggle("online", online);
+	setI18nText(document.getElementById("conn-text"), online ? "status.online" : "status.offline");
 }
 
 function initWebsocket() {
 	websocket = new WebSocket(ipEsp);
 
 	websocket.onopen = function(event) {
+
+		setConnectionState(true);
 
 		const statusEl = document.getElementById("status");
 		if (statusEl) {
@@ -320,6 +286,8 @@ function initWebsocket() {
 
 	websocket.onclose = function(event) {
 
+		setConnectionState(false);
+
 		const statusEl = document.getElementById("status");
 		if (statusEl) {
 			statusEl.classList.remove("online");
@@ -341,8 +309,6 @@ function initWebsocket() {
 	};
 
 	websocket.onmessage = function(event) {
-
-		const modeColorForm = document.getElementById("mode-color-form");
 
 		let data = JSON.parse(event.data);
 
@@ -372,6 +338,7 @@ function initWebsocket() {
 				document.getElementById("timeserver").value = data.timeserver;
 				document.getElementById("timezone").value = data.timezone || DEFAULT_TIMEZONE;
 				document.getElementById("hostname").value = data.hostname;
+				document.querySelectorAll(".hostname").forEach(el => { el.textContent = data.hostname; });
 				document.getElementById("scrollingtext").value = data.scrollingText;
 
 				[6, 8, 12, 16, 18, 20, 22, 24].forEach(h => {
@@ -423,10 +390,6 @@ function initWebsocket() {
 				document.getElementById("boot-show-led-sweep").checked = data.bootLedSweep;
 				document.getElementById("boot-show-wifi").checked = data.bootShowWifi;
 				document.getElementById("boot-show-ip").checked = data.bootShowIP;
-
-				if (modeColorForm) {
-					modeColorForm.style.gridTemplateColumns = data.hasSecondsFrame ? "1fr 1fr 1fr" : "1fr 1fr";
-				}
 
 				enableSpecific("specific-layout-0", !data.isRomanLanguage);
 				enableSpecific("specific-layout-2", data.hasDreiviertel);
@@ -484,10 +447,6 @@ function initWebsocket() {
 				hasSpecialWordHappyBirthday = data.hasSpecialWordHappyBirthday;
 				setSelectedSymbol(data.bitmapSymbol);
 
-				if (modeColorForm) {
-					modeColorForm.style.gridTemplateColumns = data.hasSecondsFrame ? "1fr 1fr 1fr" : "1fr 1fr";
-				}
-
 				command = data.prog === 0 ? CMD.MODE_WORD_CLOCK : data.prog;
 				const inputID = MODE_TO_INPUT_ID.get(data.prog);
 				debugMessage(`Mode is ${data.prog} (${inputID})`);
@@ -537,42 +496,101 @@ function initWebsocket() {
 	};
 }
 
-function changeColor(color) {
-	hsb[colorPosition][0] = color.hue;
-	hsb[colorPosition][1] = color.saturation;
-	if (color.value !== 100) {
-		hsb[colorPosition][2] = color.value;
-	}
-
-	setColors();
-	sendColorData(command, nstr(1));
+function hsvToHex(hue, saturation, value) {
+	const sat = saturation / 100;
+	const val = value / 100;
+	const channel = offset => {
+		const sector = (offset + hue / 60) % 6;
+		const level = Math.round(255 * (val - val * sat * Math.max(0, Math.min(sector, 4 - sector, 1))));
+		return level.toString(16).padStart(2, "0");
+	};
+	return `#${channel(5)}${channel(3)}${channel(1)}`;
 }
 
-function createColorPicker() {
-	colorPicker = new iro.ColorPicker("#color-picker", {
-		wheelLightness: false,
-		borderWidth: 3,
-		borderColor: "#777",
-		layout: [{
-			component: iro.ui.Wheel
-		}, {
-			component: iro.ui.Slider,
-			options: { sliderType: "value" }
-		}, {
-			component: iro.ui.Slider,
-			options: { sliderType: "kelvin" }
-		}]
-	});
-	colorPicker.on("input:change", changeColor);
+function hexToHsv(hex) {
+	const rgb = parseInt(hex.slice(1), 16);
+	const red = (rgb >> 16 & 255) / 255;
+	const green = (rgb >> 8 & 255) / 255;
+	const blue = (rgb & 255) / 255;
+	const max = Math.max(red, green, blue);
+	const delta = max - Math.min(red, green, blue);
+	let hue = 0;
+	if (delta) {
+		if (max === red) {
+			hue = ((green - blue) / delta + 6) % 6;
+		} else if (max === green) {
+			hue = (blue - red) / delta + 2;
+		} else {
+			hue = (red - green) / delta + 4;
+		}
+	}
+	return [Math.round(hue * 60), max ? Math.round(delta / max * 100) : 0, Math.round(max * 100)];
+}
+
+/**
+ * Sends the edited color, but at most every 50 ms while a slider is dragged. The last value is always sent.
+ */
+function queueColorSend() {
+	if (colorSendTimer) {
+		colorSendPending = true;
+		return;
+	}
+	sendColorData(command);
+	colorSendTimer = setTimeout(function() {
+		colorSendTimer = null;
+		if (colorSendPending) {
+			colorSendPending = false;
+			queueColorSend();
+		}
+	}, 50);
+}
+
+function changeColor(hue, saturation, value) {
+	hsb[colorPosition] = [hue, saturation, value];
+	setColors();
+	queueColorSend();
+}
+
+function clearSwatchSelection() {
+	document.querySelectorAll(".swatch.selected").forEach(el => el.classList.remove("selected"));
+}
+
+/**
+ * The page accent follows the foreground color, lifted to a lightness that stays readable on the dark theme.
+ */
+function updateAccent() {
+	const hue = hsb[0][0];
+	const saturation = Math.min(hsb[0][1], 90);
+	const rootStyle = document.documentElement.style;
+	rootStyle.setProperty("--accent", `hsl(${hue} ${saturation}% 68%)`);
+	rootStyle.setProperty("--accent-soft", `hsl(${hue} ${saturation}% 68% / 14%)`);
 }
 
 function setColors() {
-	let hsbFg = {
-		h: hsb[colorPosition][0],
-		s: hsb[colorPosition][1],
-		v: hsb[colorPosition][2]
-	};
-	colorPicker.setColors([hsbFg]);
+	const [hue, saturation, value] = hsb[colorPosition];
+	const hueInput = document.getElementById("color-hue");
+	const satInput = document.getElementById("color-sat");
+	const valInput = document.getElementById("color-val");
+	if (!hueInput || !satInput || !valInput) return;
+
+	hueInput.value = hue;
+	satInput.value = saturation;
+	valInput.value = value;
+	satInput.style.setProperty("--track", `linear-gradient(90deg, ${hsvToHex(hue, 0, 100)}, ${hsvToHex(hue, 100, 100)})`);
+	valInput.style.setProperty("--track", `linear-gradient(90deg, #000, ${hsvToHex(hue, saturation, 100)})`);
+
+	const hex = hsvToHex(hue, saturation, value);
+	document.getElementById("color-hex").textContent = hex.toUpperCase();
+	document.getElementById("color-current").style.background = hex;
+	document.getElementById("color-sat-value").textContent = saturation;
+	document.getElementById("color-val-value").textContent = value;
+	document.querySelectorAll("[data-dot]").forEach(dot => {
+		dot.style.background = hsvToHex(...hsb[dot.dataset.dot]);
+	});
+
+	// Only the areas around the words can be switched off completely.
+	document.getElementById("color-off").hidden = colorPosition === 0 || colorPosition === 3;
+	updateAccent();
 }
 
 function setSliders() {
@@ -606,11 +624,11 @@ function getSelectedModeControlState() {
 }
 
 function setModeSpecificControls(selected) {
-	document.querySelectorAll(".brightness").forEach(el => { el.style.display = selected.bri ? "block" : "none"; });
-	document.querySelectorAll(".speed").forEach(el => { el.style.display = selected.speed ? "block" : "none"; });
-	document.querySelectorAll(".fire").forEach(el => { el.style.display = selected.fire ? "block" : "none"; });
+	document.querySelectorAll(".brightness").forEach(el => { el.style.display = selected.bri ? "flex" : "none"; });
+	document.querySelectorAll(".speed").forEach(el => { el.style.display = selected.speed ? "flex" : "none"; });
+	document.querySelectorAll(".fire").forEach(el => { el.style.display = selected.fire ? "flex" : "none"; });
 	document.querySelectorAll(".functions-settings").forEach(el => { el.style.display = (selected.bri || selected.speed || selected.fire) ? "block" : "none"; });
-	document.querySelectorAll(".text").forEach(el => { el.style.display = selected.txt ? "block" : "none"; });
+	document.querySelectorAll(".text").forEach(el => { el.style.display = selected.txt ? "flex" : "none"; });
 	document.querySelectorAll(".symbol").forEach(el => { el.style.display = selected.symbol ? "block" : "none"; });
 }
 
@@ -775,7 +793,6 @@ function hideRebootRecommendedBanner() {
 document.addEventListener("DOMContentLoaded", function() {
 
 	initConfigValues();
-	createColorPicker();
 	setSliders();
 	setElementsForFunctionsMenu();
 	limitTextFieldInputs();
@@ -784,20 +801,41 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	document.querySelectorAll("input[name='colorwheel']").forEach(input => {
 		input.addEventListener("change", function(event) {
-			let id = event.target.id;
-			if (id === "colorwheel-gradient") {
-				colorPosition = 3;
-			} else if (id === "colorwheel-frame") {
-				colorPosition = 2;
-			} else if (id === "colorwheel-background") {
-				colorPosition = 1;
-			} else {
-				colorPosition = 0;
-			}
-			console.log(`colorPosition: ${colorPosition}`);
+			colorPosition = Number(event.target.value);
+			debugMessage(`colorPosition: ${colorPosition}`);
+			clearSwatchSelection();
 			setColors();
 		});
 	});
+
+	["color-hue", "color-sat", "color-val"].forEach(id => {
+		document.getElementById(id).addEventListener("input", function() {
+			clearSwatchSelection();
+			changeColor(
+				Number(document.getElementById("color-hue").value),
+				Number(document.getElementById("color-sat").value),
+				Number(document.getElementById("color-val").value)
+			);
+		});
+	});
+
+	document.getElementById("swatch-grid").addEventListener("click", function(event) {
+		const swatch = event.target.closest(".swatch");
+		if (!swatch) return;
+		clearSwatchSelection();
+		swatch.classList.add("selected");
+		changeColor(...hexToHsv(swatch.dataset.color));
+	});
+
+	document.getElementById("color-off").addEventListener("click", function() {
+		clearSwatchSelection();
+		changeColor(hsb[colorPosition][0], hsb[colorPosition][1], 0);
+	});
+
+	document.getElementById("color-form").addEventListener("submit", event => event.preventDefault());
+
+	const connHost = document.getElementById("conn-host");
+	if (connHost) connHost.textContent = location.hostname;
 
 	document.querySelectorAll(".status-button").forEach(btn => {
 		btn.addEventListener("click", function() {
@@ -830,15 +868,37 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	}
 
-	const menuLinks = document.querySelectorAll(".pure-menu-link[data-navigation]");
+	const menu = document.getElementById("menu");
+	const menuLinks = document.querySelectorAll(".nav-link[data-navigation]");
+	const navMore = document.getElementById("nav-more");
+
+	function setMoreOpen(open) {
+		menu.classList.toggle("more-open", open);
+		navMore.setAttribute("aria-expanded", open);
+	}
+
+	navMore.addEventListener("click", () => setMoreOpen(!menu.classList.contains("more-open")));
+	document.addEventListener("click", function(event) {
+		if (!menu.contains(event.target)) setMoreOpen(false);
+	});
+	menu.addEventListener("keydown", function(event) {
+		if (event.key === "Escape") setMoreOpen(false);
+	});
 
 	function setActiveNavigation(navigation) {
+		let activeInMore = false;
 		menuLinks.forEach(elem => {
 			const isActive = elem.dataset.navigation === navigation;
-			elem.classList.toggle("pure-menu-selected", isActive);
+			elem.classList.toggle("active", isActive);
 			elem.toggleAttribute("aria-current", isActive);
-			if (isActive) elem.setAttribute("aria-current", "page");
+			if (isActive) {
+				elem.setAttribute("aria-current", "page");
+				activeInMore = elem.parentElement.id === "menu-more";
+				setI18nText(document.getElementById("page-title"), elem.dataset.title || elem.querySelector("span").dataset.i18next);
+			}
 		});
+		navMore.classList.toggle("active", activeInMore);
+		document.getElementById("page-sub").hidden = navigation !== "main";
 	}
 
 	/**
@@ -850,6 +910,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			let navigation = this.dataset.navigation;
 
 			setActiveNavigation(navigation);
+			setMoreOpen(false);
 
 			if (navigation === "functions") {
 				sendCmd(CMD.REQ_BIRTHDAYS);
@@ -871,9 +932,10 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 
 			// show/hide sections
-			document.querySelectorAll(".section").forEach(sec => { sec.style.display = "none"; });
-			const targetSection = document.querySelector(`.section-${navigation}`);
-			if (targetSection) targetSection.style.display = "block";
+			document.querySelectorAll(".section").forEach(sec => {
+				sec.hidden = !sec.classList.contains(`section-${navigation}`);
+			});
+			window.scrollTo(0, 0);
 		});
 	});
 

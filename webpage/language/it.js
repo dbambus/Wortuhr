@@ -1,8 +1,8 @@
 let TRANSLATION_IT = {
 	"title": "Orologio di parole",
 	"menu": {
-		"aria-show-menu": "Mostra menù",
-		"aria-hide-menu": "Nascondi menù",
+		"more": "Altro",
+		"view": "Vista",
 		"language": {
 			"label": "Lingua",
 			"de": "🇩🇪 Tedesco",
@@ -22,9 +22,19 @@ let TRANSLATION_IT = {
 		"button": "Riavvia",
 		"text": "Si consiglia un riavvio per applicare l'impostazione modificata."
 	},
+	"status": {
+		"online": "Connesso",
+		"offline": "Disconnesso"
+	},
 	"colors": {
 		"h1": "Colori",
-		"with-background": "Con colore di sfondo"
+		"hint": "Le modifiche vengono inviate subito all'orologio.",
+		"target": "Cosa colorare?",
+		"hue": "Tonalità",
+		"saturation": "Saturazione",
+		"brightness": "Luminosità",
+		"favorites": "Preferiti",
+		"off": "Spegni"
 	},
 	"functions": {
 		"h1": "Caratteristiche",

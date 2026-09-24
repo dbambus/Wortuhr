@@ -38,12 +38,10 @@ i18next.init({
 	}
 	initLanguageDropdown(i18next.resolvedLanguage);
 	applyLanguageToAnnotatedElements();
-	applyLanguageSpecialCases();
 });
 
 i18next.on("languageChanged", () => {
 	applyLanguageToAnnotatedElements();
-	applyLanguageSpecialCases();
 });
 
 /**
@@ -55,20 +53,6 @@ function applyLanguageToAnnotatedElements() {
 		.forEach((element) => {
 			element.innerHTML = i18next.t(element.dataset.i18next);
 		});
-}
-
-/**
- * There are some translation that are not applied via the general method above (`data-i18next`). This function
- * applies the translation manually in some special cases.
- */
-function applyLanguageSpecialCases() {
-	// Translate the `aria-label` attribute of the menu link depending on the menu state
-	const menuLink = document.getElementsByClassName("hamburger")[0];
-	if (menuLink.getAttribute("aria-expanded") === "true") {
-		menuLink.setAttribute("aria-label", i18next.t("menu.aria-hide-menu"));
-	} else {
-		menuLink.setAttribute("aria-label", i18next.t("menu.aria-show-menu"));
-	}
 }
 
 function initLanguageDropdown(language) {

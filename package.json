@@ -101,7 +101,6 @@
 		"@tootallnate/once": "^2.0.1"
 	},
 	"dependencies": {
-		"@jaames/iro": "^5.5.2",
 		"i18next": "^26.4.2",
 		"i18next-browser-languagedetector": "^8.2.1",
 		"minified": "^1.0.1",
