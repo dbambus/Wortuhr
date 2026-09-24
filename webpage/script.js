@@ -556,14 +556,14 @@ function clearSwatchSelection() {
 }
 
 /**
- * The page accent follows the foreground color, lifted to a lightness that stays readable on the dark theme.
+ * The page accent follows the foreground color. The stylesheet picks a lightness that stays readable in each theme.
  */
 function updateAccent() {
 	const hue = hsb[0][0];
 	const saturation = Math.min(hsb[0][1], 90);
 	const rootStyle = document.documentElement.style;
-	rootStyle.setProperty("--accent", `hsl(${hue} ${saturation}% 68%)`);
-	rootStyle.setProperty("--accent-soft", `hsl(${hue} ${saturation}% 68% / 14%)`);
+	rootStyle.setProperty("--accent-h", hue);
+	rootStyle.setProperty("--accent-s", `${saturation}%`);
 }
 
 function setColors() {
