@@ -1,8 +1,8 @@
 let TRANSLATION_DE_DE = {
 	"title": "Wortuhr",
 	"menu": {
-		"aria-show-menu": "Menü anzeigen",
-		"aria-hide-menu": "Menü ausblenden",
+		"more": "Mehr",
+		"view": "Anzeige",
 		"language": {
 			"label": "Sprache",
 			"de": "🇩🇪 Deutsch",
@@ -22,9 +22,19 @@ let TRANSLATION_DE_DE = {
 		"button": "Neu starten",
 		"text": "Ein Neustart wird empfohlen, um die geänderte Einstellung zu übernehmen."
 	},
+	"status": {
+		"online": "Verbunden",
+		"offline": "Getrennt"
+	},
 	"colors": {
 		"h1": "Farben",
-		"with-background": "Mit Hintergrundfarbe"
+		"hint": "Änderungen werden sofort an die Uhr gesendet.",
+		"target": "Was einfärben?",
+		"hue": "Farbton",
+		"saturation": "Sättigung",
+		"brightness": "Helligkeit",
+		"favorites": "Favoriten",
+		"off": "Ausschalten"
 	},
 	"functions": {
 		"h1": "Funktionen",

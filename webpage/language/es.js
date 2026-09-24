@@ -1,8 +1,8 @@
 let TRANSLATION_ES = {
 	"title": "Reloj de Palabras",
 	"menu": {
-		"aria-show-menu": "Muestrame el menu",
-		"aria-hide-menu": "Ocultar el menú",
+		"more": "Más",
+		"view": "Vista",
 		"language": {
 			"label": "Idioma",
 			"de": "🇩🇪 Alemán",
@@ -22,9 +22,19 @@ let TRANSLATION_ES = {
 		"button": "Reiniciar",
 		"text": "Se recomienda reiniciar para aplicar la configuración modificada."
 	},
+	"status": {
+		"online": "Conectado",
+		"offline": "Desconectado"
+	},
 	"colors": {
 		"h1": "Colores",
-		"with-background": "Con color de fondo"
+		"hint": "Los cambios se envían al reloj de inmediato.",
+		"target": "¿Qué colorear?",
+		"hue": "Tono",
+		"saturation": "Saturación",
+		"brightness": "Brillo",
+		"favorites": "Favoritos",
+		"off": "Apagar"
 	},
 	"functions": {
 		"h1": "Características",

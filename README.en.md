@@ -437,7 +437,7 @@ As a result the word clock appears in Home Assistant as a light entity, fully au
 
 - An on/off switch
 - A brightness slider
-- A colour picker (colour wheel)
+- A colour picker (sliders for hue, saturation and brightness, favourites)
 - A dropdown menu for all effects (Wordclock, Rainbow, etc.)
 
 ## Contributing

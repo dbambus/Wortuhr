@@ -1,8 +1,8 @@
 let TRANSLATION_EN_US = {
 	"title": "Wordclock",
 	"menu": {
-		"aria-show-menu": "Show Menu",
-		"aria-hide-menu": "Hide Menu",
+		"more": "More",
+		"view": "Display",
 		"language": {
 			"label": "Language",
 			"de": "🇩🇪 German",
@@ -22,9 +22,19 @@ let TRANSLATION_EN_US = {
 		"button": "Restart",
 		"text": "A restart is recommended to apply the changed setting."
 	},
+	"status": {
+		"online": "Connected",
+		"offline": "Disconnected"
+	},
 	"colors": {
 		"h1": "Colors",
-		"with-background": "With Background Color"
+		"hint": "Changes are sent to the clock immediately.",
+		"target": "What to color?",
+		"hue": "Hue",
+		"saturation": "Saturation",
+		"brightness": "Brightness",
+		"favorites": "Favorites",
+		"off": "Turn off"
 	},
 	"functions": {
 		"h1": "Functions",
