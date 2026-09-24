@@ -30,8 +30,8 @@ let TRANSLATION_DE_DE = {
 		"h1": "Farben",
 		"hint": "Änderungen werden sofort an die Uhr gesendet.",
 		"target": "Was einfärben?",
-		"hue": "Farbton",
-		"saturation": "Sättigung",
+		"wheel": "Farbrad",
+		"temperature": "Farbtemperatur",
 		"brightness": "Helligkeit",
 		"favorites": "Favoriten",
 		"off": "Ausschalten"

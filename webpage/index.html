@@ -178,19 +178,14 @@
                             </div>
                         </fieldset>
 
-                        <div class="color-slider">
+                        <div class="color-picker">
                             <div class="slider-head">
-                                <label for="color-hue" data-i18next="colors.hue"></label>
+                                <span class="picker-title" id="color-wheel-label" data-i18next="colors.wheel"></span>
                                 <span class="color-code"><span class="dot" id="color-current"></span><span id="color-hex">#000000</span></span>
                             </div>
-                            <input id="color-hue" class="hue" type="range" min="0" max="360" value="0">
-                        </div>
-                        <div class="color-slider">
-                            <div class="slider-head">
-                                <label for="color-sat" data-i18next="colors.saturation"></label>
-                                <span class="value"><span id="color-sat-value">0</span> %</span>
+                            <div class="color-wheel" id="color-wheel" role="slider" tabindex="0" aria-labelledby="color-wheel-label" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0">
+                                <span class="wheel-thumb" id="wheel-thumb"></span>
                             </div>
-                            <input id="color-sat" type="range" min="0" max="100" value="100">
                         </div>
                         <div class="color-slider">
                             <div class="slider-head">
@@ -198,6 +193,13 @@
                                 <span class="value"><span id="color-val-value">0</span> %</span>
                             </div>
                             <input id="color-val" type="range" min="0" max="100" value="50">
+                        </div>
+                        <div class="color-slider">
+                            <div class="slider-head">
+                                <label for="color-kelvin" data-i18next="colors.temperature"></label>
+                                <span class="value"><span id="color-kelvin-value">4000</span> K</span>
+                            </div>
+                            <input id="color-kelvin" type="range" min="2200" max="10000" step="100" value="4000">
                         </div>
 
                         <div class="favorites">

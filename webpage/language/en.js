@@ -30,8 +30,8 @@ let TRANSLATION_EN_US = {
 		"h1": "Colors",
 		"hint": "Changes are sent to the clock immediately.",
 		"target": "What to color?",
-		"hue": "Hue",
-		"saturation": "Saturation",
+		"wheel": "Color wheel",
+		"temperature": "Color temperature",
 		"brightness": "Brightness",
 		"favorites": "Favorites",
 		"off": "Turn off"

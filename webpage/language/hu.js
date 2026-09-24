@@ -30,8 +30,8 @@ let TRANSLATION_HU = {
 		"h1": "Színek",
 		"hint": "A változtatások azonnal az órára kerülnek.",
 		"target": "Mit színezzünk?",
-		"hue": "Színárnyalat",
-		"saturation": "Telítettség",
+		"wheel": "Színkerék",
+		"temperature": "Színhőmérséklet",
 		"brightness": "Fényerő",
 		"favorites": "Kedvencek",
 		"off": "Kikapcsolás"

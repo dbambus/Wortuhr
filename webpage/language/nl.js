@@ -30,8 +30,8 @@ let TRANSLATION_NL = {
 		"h1": "Kleuren",
 		"hint": "Wijzigingen worden direct naar de klok gestuurd.",
 		"target": "Wat inkleuren?",
-		"hue": "Tint",
-		"saturation": "Verzadiging",
+		"wheel": "Kleurenwiel",
+		"temperature": "Kleurtemperatuur",
 		"brightness": "Helderheid",
 		"favorites": "Favorieten",
 		"off": "Uitschakelen"

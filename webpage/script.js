@@ -568,21 +568,25 @@ function updateAccent() {
 
 function setColors() {
 	const [hue, saturation, value] = hsb[colorPosition];
-	const hueInput = document.getElementById("color-hue");
-	const satInput = document.getElementById("color-sat");
+	const wheel = document.getElementById("color-wheel");
 	const valInput = document.getElementById("color-val");
-	if (!hueInput || !satInput || !valInput) return;
+	if (!wheel || !valInput) return;
 
-	hueInput.value = hue;
-	satInput.value = saturation;
-	valInput.value = value;
-	satInput.style.setProperty("--track", `linear-gradient(90deg, ${hsvToHex(hue, 0, 100)}, ${hsvToHex(hue, 100, 100)})`);
-	valInput.style.setProperty("--track", `linear-gradient(90deg, #000, ${hsvToHex(hue, saturation, 100)})`);
+	// Hue runs clockwise from the right edge, saturation grows from the center.
+	const radius = saturation / 2;
+	const thumb = document.getElementById("wheel-thumb");
+	thumb.style.left = `${50 + radius * Math.cos(hue * Math.PI / 180)}%`;
+	thumb.style.top = `${50 + radius * Math.sin(hue * Math.PI / 180)}%`;
+	thumb.style.background = hsvToHex(hue, saturation, 100);
 
 	const hex = hsvToHex(hue, saturation, value);
+	wheel.setAttribute("aria-valuenow", hue);
+	wheel.setAttribute("aria-valuetext", hex);
+	valInput.value = value;
+	valInput.style.setProperty("--track", `linear-gradient(90deg, #000, ${hsvToHex(hue, saturation, 100)})`);
+
 	document.getElementById("color-hex").textContent = hex.toUpperCase();
 	document.getElementById("color-current").style.background = hex;
-	document.getElementById("color-sat-value").textContent = saturation;
 	document.getElementById("color-val-value").textContent = value;
 	document.querySelectorAll("[data-dot]").forEach(dot => {
 		dot.style.background = hsvToHex(...hsb[dot.dataset.dot]);
@@ -591,6 +595,33 @@ function setColors() {
 	// Only the areas around the words can be switched off completely.
 	document.getElementById("color-off").hidden = colorPosition === 0 || colorPosition === 3;
 	updateAccent();
+}
+
+/**
+ * Approximates the color of a black body at the given temperature (after Tanner Helland).
+ *
+ * @param {number} kelvin 1000 to 40000
+ * @returns {string} hex color
+ */
+function kelvinToHex(kelvin) {
+	const temp = kelvin / 100;
+	let red = 255;
+	let green;
+	let blue = 255;
+	if (temp <= 66) {
+		green = 99.4708025861 * Math.log(temp) - 161.1195681661;
+		if (temp <= 19) {
+			blue = 0;
+		} else {
+			blue = 138.5177312231 * Math.log(temp - 10) - 305.0447927307;
+		}
+	} else {
+		red = 329.698727446 * Math.pow(temp - 60, -0.1332047592);
+		green = 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
+	}
+	return "#" + [red, green, blue]
+		.map(level => Math.max(0, Math.min(255, Math.round(level))).toString(16).padStart(2, "0"))
+		.join("");
 }
 
 function setSliders() {
@@ -808,15 +839,52 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	});
 
-	["color-hue", "color-sat", "color-val"].forEach(id => {
-		document.getElementById(id).addEventListener("input", function() {
-			clearSwatchSelection();
-			changeColor(
-				Number(document.getElementById("color-hue").value),
-				Number(document.getElementById("color-sat").value),
-				Number(document.getElementById("color-val").value)
-			);
-		});
+	const wheel = document.getElementById("color-wheel");
+
+	function pickFromWheel(event) {
+		const rect = wheel.getBoundingClientRect();
+		const radius = rect.width / 2;
+		const dx = event.clientX - rect.left - radius;
+		const dy = event.clientY - rect.top - radius;
+		const hue = Math.round((Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360);
+		const saturation = Math.round(Math.min(1, Math.hypot(dx, dy) / radius) * 100);
+		clearSwatchSelection();
+		changeColor(hue, saturation, hsb[colorPosition][2]);
+	}
+
+	wheel.addEventListener("pointerdown", function(event) {
+		wheel.setPointerCapture(event.pointerId);
+		pickFromWheel(event);
+	});
+	wheel.addEventListener("pointermove", function(event) {
+		if (wheel.hasPointerCapture(event.pointerId)) pickFromWheel(event);
+	});
+	wheel.addEventListener("keydown", function(event) {
+		// Left/right turn the hue, up/down change the saturation.
+		const steps = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowDown: [0, -5], ArrowUp: [0, 5] }[event.key];
+		if (!steps) return;
+		event.preventDefault();
+		const [hue, saturation, value] = hsb[colorPosition];
+		changeColor((hue + steps[0] + 360) % 360, Math.max(0, Math.min(100, saturation + steps[1])), value);
+	});
+
+	document.getElementById("color-val").addEventListener("input", function(event) {
+		clearSwatchSelection();
+		changeColor(hsb[colorPosition][0], hsb[colorPosition][1], Number(event.target.value));
+	});
+
+	const kelvinInput = document.getElementById("color-kelvin");
+	const kelvinStops = [];
+	for (let kelvin = Number(kelvinInput.min); kelvin <= Number(kelvinInput.max); kelvin += 1300) {
+		kelvinStops.push(kelvinToHex(kelvin));
+	}
+	kelvinInput.style.setProperty("--track", `linear-gradient(90deg, ${kelvinStops.join(", ")})`);
+	kelvinInput.addEventListener("input", function() {
+		const kelvin = Number(kelvinInput.value);
+		document.getElementById("color-kelvin-value").textContent = kelvin;
+		const [hue, saturation] = hexToHsv(kelvinToHex(kelvin));
+		clearSwatchSelection();
+		changeColor(hue, saturation, hsb[colorPosition][2]);
 	});
 
 	document.getElementById("swatch-grid").addEventListener("click", function(event) {

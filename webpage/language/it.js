@@ -30,8 +30,8 @@ let TRANSLATION_IT = {
 		"h1": "Colori",
 		"hint": "Le modifiche vengono inviate subito all'orologio.",
 		"target": "Cosa colorare?",
-		"hue": "Tonalità",
-		"saturation": "Saturazione",
+		"wheel": "Ruota dei colori",
+		"temperature": "Temperatura colore",
 		"brightness": "Luminosità",
 		"favorites": "Preferiti",
 		"off": "Spegni"

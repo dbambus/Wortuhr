@@ -435,7 +435,7 @@ Dadurch taucht die Wortuhr in Home Assistant vollautomatisch als Licht-Entität 
 
 - Ein/Aus Schalter
 - Helligkeits-Schieberegler
-- Farbwähler (Regler für Farbton, Sättigung und Helligkeit, Favoriten)
+- Farbwähler (Farbrad, Helligkeit, Farbtemperatur, Favoriten)
 - Ein Dropdown-Menü für alle Effekte (Wordclock, Rainbow, etc.)
 
 ## Mitwirken
