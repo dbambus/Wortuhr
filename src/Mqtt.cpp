@@ -7,6 +7,7 @@
 #include "Mqtt.h"
 
 #include "Led.h"
+#include "Render/DisplayBrightness.h"
 #include "WebPageAdapter.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
@@ -448,9 +449,7 @@ bool Mqtt::processBrightness(const JsonDocument &doc) {
         float brightness = float(rawBrightness) / 255.0f;
         brightness = max(0.0f, min(1.0f, brightness));
 
-        // Set brightness directly
-        G.color[Foreground] =
-            HsbColor(G.color[Foreground].H, G.color[Foreground].S, brightness);
+        setDisplayBrightness(G.color, brightness);
         Serial.print("MQTT: Setting manual brightness: ");
         Serial.println(brightness);
 
