@@ -419,6 +419,7 @@ function initWebsocket() {
 				document.getElementById("auto-bright-min").value = autoBrightMin;
 				document.getElementById("auto-bright-max").value = autoBrightMax;
 				document.getElementById("auto-bright-peak").value = autoBrightPeak;
+				updateAutoBrightValues();
 				break;
 			}
 			case "i2c-scan": {
@@ -481,6 +482,7 @@ function initWebsocket() {
 					document.getElementById("auto-bright-min").value = autoBrightMin;
 					document.getElementById("auto-bright-max").value = autoBrightMax;
 					document.getElementById("auto-bright-peak").value = autoBrightPeak;
+					updateAutoBrightValues();
 				}
 
 				if (data.autoBrightEnabled === 1) {
@@ -655,11 +657,11 @@ function getSelectedModeControlState() {
 }
 
 function setModeSpecificControls(selected) {
-	document.querySelectorAll(".brightness").forEach(el => { el.style.display = selected.bri ? "flex" : "none"; });
-	document.querySelectorAll(".speed").forEach(el => { el.style.display = selected.speed ? "flex" : "none"; });
-	document.querySelectorAll(".fire").forEach(el => { el.style.display = selected.fire ? "flex" : "none"; });
+	document.querySelectorAll(".brightness").forEach(el => { el.style.display = selected.bri ? "grid" : "none"; });
+	document.querySelectorAll(".speed").forEach(el => { el.style.display = selected.speed ? "grid" : "none"; });
+	document.querySelectorAll(".fire").forEach(el => { el.style.display = selected.fire ? "grid" : "none"; });
 	document.querySelectorAll(".functions-settings").forEach(el => { el.style.display = (selected.bri || selected.speed || selected.fire) ? "block" : "none"; });
-	document.querySelectorAll(".text").forEach(el => { el.style.display = selected.txt ? "flex" : "none"; });
+	document.querySelectorAll(".text").forEach(el => { el.style.display = selected.txt ? "grid" : "none"; });
 	document.querySelectorAll(".symbol").forEach(el => { el.style.display = selected.symbol ? "block" : "none"; });
 }
 
@@ -698,6 +700,12 @@ function updateManualTimeInput() {
 	const minutes = currentDate.getMinutes().toString().padStart(2, "0");
 	const timeEl = document.getElementById("time");
 	if (timeEl) timeEl.value = `${hours}:${minutes}`;
+}
+
+function updateAutoBrightValues() {
+	["min", "max", "peak"].forEach(name => {
+		document.getElementById(`auto-bright-${name}-value`).textContent = document.getElementById(`auto-bright-${name}`).value;
+	});
 }
 
 function autoBrightUpdater() {
@@ -1100,6 +1108,10 @@ document.addEventListener("DOMContentLoaded", function() {
 			debugMessage(`WiFi${debugMessageReconfigured}`);
 		});
 	}
+
+	["auto-bright-min", "auto-bright-max", "auto-bright-peak"].forEach(id => {
+		document.getElementById(id).addEventListener("input", updateAutoBrightValues);
+	});
 
 	document.querySelectorAll("[id*='auto-bright']").forEach(el => {
 		el.addEventListener("change", function(event) {

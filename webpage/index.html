@@ -145,7 +145,7 @@
 
             <section class="section section-main">
                 <div class="box box-color">
-                    <form class="pure-form color-form" id="color-form">
+                    <form class="pure-form pure-form-aligned color-form" id="color-form">
                         <div class="pure-control-group colorize-mode">
                             <label for="colorize-mode" data-i18next="functions.color.mode.label"></label>
                             <select id="colorize-mode" size="1">
@@ -336,19 +336,19 @@
                             <legend data-i18next="settings.brightness.help-min"></legend>
                             <div class="pure-control-group">
                             <label class="slider-label" for="auto-bright-min" data-i18next="settings.brightness.value-min"></label>
-                            <span class="value" id="auto-bright-min-value">0</span> %
+                            <span class="value"><span id="auto-bright-min-value">0</span> %</span>
                             <input id="auto-bright-min" type="range" min="0" max="100" value="0">
                             </div>
                             <legend data-i18next="settings.brightness.help-max"></legend>
                             <div class="pure-control-group">
                             <label class="slider-label" for="auto-bright-max" data-i18next="settings.brightness.value-max"></label>
-                            <span class="value" id="auto-bright-max-value">100</span> %
+                            <span class="value"><span id="auto-bright-max-value">100</span> %</span>
                             <input id="auto-bright-max" type="range" min="10" max="100" value="100">
                             </div>
                             <legend data-i18next="settings.brightness.help-peak"></legend>
                             <div class="pure-control-group">
                             <label class="slider-label" for="auto-bright-peak" data-i18next="settings.brightness.value-peak"></label>
-                            <span class="value" id="auto-bright-peak-value">1500</span> lx
+                            <span class="value"><span id="auto-bright-peak-value">1500</span> lx</span>
                             <input id="auto-bright-peak" type="range" min="10" max="1500" value="1500">
                             </div>
                         </div>
@@ -478,7 +478,10 @@
                         </div>
                         <div class="pure-control-group">
                             <label for="transition-demo" data-i18next="functions.transition.demo.label"></label>
-                            <input type="checkbox" id="transition-demo" >
+                            <label class="switch">
+                                <input type="checkbox" id="transition-demo">
+                                <span class="slider round"></span>
+                            </label>
                         </div>
                     </form>
                 </div>
