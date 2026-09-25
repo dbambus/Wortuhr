@@ -187,7 +187,9 @@ svg {
 @supports (-webkit-backdrop-filter: blur(1px)) {
     .box,
     .menu,
-    .conn {
+    .conn,
+    .lang-picker .language,
+    .lang-flag {
         -webkit-backdrop-filter: var(--glass-blur); /* stylelint-disable-line property-no-vendor-prefix */
     }
 }
@@ -324,22 +326,15 @@ svg {
     gap: 4px;
 }
 
-/* Label and version start where the text inside the select and the nav icons start */
+/* The version starts where the nav icons start */
 .menu-foot {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.menu-foot .eyebrow,
 .menu-foot .footer {
     padding: 0 calc(var(--field-pad) + 1px);
-}
-
-.language-select {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 }
 
 .footer {
@@ -519,12 +514,19 @@ svg {
     content: " · ";
 }
 
-/* Centered on the first line of the page title */
+/* Language and connection status, centered on the first line of the page title */
+.header-tools {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+}
+
 .conn {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
-    margin-top: 2px;
     gap: 10px;
     height: 38px;
     box-sizing: border-box;
@@ -532,6 +534,44 @@ svg {
     border-radius: 999px;
     font-size: 13px;
     white-space: nowrap;
+}
+
+/* Same pill as the status, the arrow keeps the inset of the text */
+.lang-picker {
+    position: relative;
+}
+
+.lang-picker .language,
+.lang-flag {
+    box-sizing: border-box;
+    height: 38px;
+    margin: 0;
+    padding: 0 38px 0 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--chevron) no-repeat right 16px center / 12px 8px, var(--glass-sheen), var(--glass);
+    box-shadow: var(--glass-hl), var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    appearance: none;
+}
+
+.lang-picker option {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.lang-flag {
+    display: none;
+}
+
+.lang-picker .language:focus-visible,
+.lang-picker:has(.language:focus-visible) .lang-flag {
+    outline: 2px solid var(--accent-ink);
+    outline-offset: 3px;
 }
 
 .conn-dot {
@@ -585,13 +625,36 @@ svg {
         grid-column: 1;
     }
 
-    .conn {
+    .header-tools {
         grid-row: 1;
         grid-column: 2;
-        height: 30px;
+        gap: 8px;
         margin: 0;
+    }
+
+    .conn {
+        height: 30px;
         padding: 0 12px;
         font-size: 12px;
+    }
+
+    /* Phones show only the flag; the invisible select on top still opens the full list. */
+    .lang-flag {
+        display: flex;
+        align-items: center;
+        height: 30px;
+        padding: 0 28px 0 10px;
+        background-position: right 10px center, 0 0, 0 0;
+        font-size: 16px;
+    }
+
+    .lang-picker .language {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 16px;
+        opacity: 0;
     }
 
     .page-header h1 {
@@ -728,8 +791,7 @@ svg {
 .pure-form input[type="url"],
 .pure-form input:not([type]),
 .pure-form select,
-.pure-form textarea,
-.menu .language {
+.pure-form textarea {
     display: block;
     box-sizing: border-box;
     width: 100%;
@@ -746,8 +808,7 @@ svg {
 }
 
 /* The arrow keeps the same distance to the right edge as the text to the left edge. */
-.pure-form select,
-.menu .language {
+.pure-form select {
     padding-right: calc(var(--field-pad) * 2 + 12px);
     background-image: var(--chevron);
     background-position: right var(--field-pad) center;
@@ -764,8 +825,7 @@ svg {
 
 .pure-form input:focus,
 .pure-form select:focus,
-.pure-form textarea:focus,
-.menu .language:focus {
+.pure-form textarea:focus {
     border-color: var(--accent-ink);
     outline: none;
     box-shadow: var(--field-shadow), 0 0 0 3px var(--accent-soft);

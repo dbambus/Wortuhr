@@ -53,6 +53,23 @@ function applyLanguageToAnnotatedElements() {
 		.forEach((element) => {
 			element.innerHTML = i18next.t(element.dataset.i18next);
 		});
+	document.querySelectorAll("[data-i18next-aria]")
+		.forEach((element) => {
+			element.setAttribute("aria-label", i18next.t(element.dataset.i18nextAria));
+		});
+	updateLanguageFlag();
+}
+
+/**
+ * Phones only show the flag of the selected language (the part of the option text before the first space).
+ */
+function updateLanguageFlag() {
+	const languageSelect = document.getElementById("language");
+	const flag = document.getElementById("language-flag");
+	const selected = languageSelect && languageSelect.selectedOptions[0];
+	if (flag && selected) {
+		flag.textContent = selected.textContent.split(" ")[0];
+	}
 }
 
 function initLanguageDropdown(language) {
@@ -72,6 +89,7 @@ function initLanguageDropdown(language) {
 
 	// set initial language for the dropdown
 	languageSelect.value = language;
+	updateLanguageFlag();
 
 	// setup listener for dropdown change
 	languageSelect.addEventListener("change", (event) => {

@@ -95,18 +95,6 @@
             <a href="#" class="nav-link" data-navigation="about"><svg aria-hidden="true"><use href="#i-info"/></svg><span data-i18next="about.h1"></span></a>
 
             <div class="menu-foot">
-                <div class="language-select" id="language-select-container">
-                    <label for="language" class="eyebrow" data-i18next="menu.language.label"></label>
-                    <select id="language" class="language" size="1">
-                        <option value="de" data-i18next="menu.language.de"></option>
-                        <option value="en" data-i18next="menu.language.en"></option>
-                        <option value="nl" data-i18next="menu.language.nl"></option>
-                        <option value="es" data-i18next="menu.language.es"></option>
-                        <option value="it" data-i18next="menu.language.it"></option>
-                        <option value="hu" data-i18next="menu.language.hu"></option>
-                        <option value="ru" data-i18next="menu.language.ru"></option>
-                    </select>
-                </div>
                 <p class="footer">
                     <span data-i18next="footer.version"></span>
                     <span id="version" class="version">0.0.0</span>
@@ -123,10 +111,24 @@
                 <h1 id="page-title" data-i18next="colors.h1"></h1>
                 <p id="page-sub" class="page-sub" data-i18next="colors.hint"></p>
             </div>
-            <div class="conn" id="conn">
-                <span class="conn-dot"></span>
-                <span id="conn-text" data-i18next="status.offline"></span>
-                <span class="conn-host" id="conn-host"></span>
+            <div class="header-tools">
+                <div class="lang-picker" id="language-select-container">
+                    <span class="lang-flag" id="language-flag" aria-hidden="true"></span>
+                    <select id="language" class="language" size="1" data-i18next-aria="menu.language.label">
+                    <option value="de" data-i18next="menu.language.de"></option>
+                    <option value="en" data-i18next="menu.language.en"></option>
+                    <option value="nl" data-i18next="menu.language.nl"></option>
+                    <option value="es" data-i18next="menu.language.es"></option>
+                    <option value="it" data-i18next="menu.language.it"></option>
+                    <option value="hu" data-i18next="menu.language.hu"></option>
+                    <option value="ru" data-i18next="menu.language.ru"></option>
+                    </select>
+                </div>
+                <div class="conn" id="conn">
+                    <span class="conn-dot"></span>
+                    <span id="conn-text" data-i18next="status.offline"></span>
+                    <span class="conn-host" id="conn-host"></span>
+                </div>
             </div>
         </header>
 
