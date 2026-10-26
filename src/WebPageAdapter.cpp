@@ -1,6 +1,7 @@
 #include "WebPageAdapter.h"
 
-#include "Render/ColorContext.h"        // Colorize
+#include "Render/ColorContext.h" // Colorize
+#include "TelnetLog.h"
 #include "Transitions/TransitionType.h" // isValidTransitionType()
 #include "WordClock.h"                  // sendMQTTUpdate()
 #include <Arduino.h>
@@ -46,8 +47,8 @@ bool requirePayloadLength(size_t length, size_t required, const char *command) {
         return true;
     }
 
-    Serial.print(command);
-    Serial.println(" command ignored - incomplete payload");
+    logger.print(command);
+    logger.println(" command ignored - incomplete payload");
     return false;
 }
 
@@ -145,7 +146,7 @@ bool parseColor(uint8_t *payload, size_t length) {
     if (position > GradientEnd || hue > 360 || saturation > 100 ||
         value > 100 || effectBrightness > 100 ||
         !effectSpeedIsValid(effectSpeed)) {
-        Serial.println("Invalid color payload ignored");
+        logger.println("Invalid color payload ignored");
         return false;
     }
 
@@ -170,7 +171,7 @@ bool parseBrightness(const uint8_t *payload, size_t length) {
     for (uint8_t i = 0; i < 9; i++) {
         brightness[i] = split(payload, length, 3 + i * 3);
         if (brightness[i] > 100) {
-            Serial.println("Invalid brightness payload ignored");
+            logger.println("Invalid brightness payload ignored");
             return false;
         }
     }
@@ -214,18 +215,18 @@ const char *loggablePayload(WStype_t type, const uint8_t *payload,
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t length) {
     payload = (payload == NULL) ? (uint8_t *)"" : payload;
-    Serial.printf("Client-Nr.: [%u]  WStype: %u length: %u payload: %s\n", num,
+    logger.printf("Client-Nr.: [%u]  WStype: %u length: %u payload: %s\n", num,
                   type, static_cast<unsigned>(length),
                   loggablePayload(type, payload, length));
 
     switch (type) {
     case WStype_DISCONNECTED: {
-        Serial.printf("[%u] Disconnected!\n", num);
+        logger.printf("[%u] Disconnected!\n", num);
         break;
     }
     case WStype_CONNECTED: {
         IPAddress ip = webSocket.remoteIP(num);
-        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
+        logger.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
                       ip[1], ip[2], ip[3], payload);
         break;
     }
@@ -267,7 +268,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (isValidTransitionType(transitionType)) {
                 G.transitionType = transitionType;
             } else {
-                Serial.printf("Ignoring invalid transition type: %lu\n",
+                logger.printf("Ignoring invalid transition type: %lu\n",
                               static_cast<unsigned long>(transitionType));
             }
             G.transitionDuration = split(payload, length, 6);
@@ -299,7 +300,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             //------------------------------------------------------------------------------
 
         case COMMAND_SET_INITIAL_VALUES: {
-            Serial.println("Startwerte gespeichert");
+            logger.println("Startwerte gespeichert");
 
             if (length > 3) {
                 parseColor(payload, length);
@@ -333,7 +334,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (secondVariantIsValid(secondVariant)) {
                 G.secondVariant = static_cast<SecondVariant>(secondVariant);
             } else {
-                Serial.printf("Ignoring invalid second variant: %lu\n",
+                logger.printf("Ignoring invalid second variant: %lu\n",
                               static_cast<unsigned long>(secondVariant));
             }
             break;
@@ -346,7 +347,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (minuteVariantIsValid(minuteVariant)) {
                 G.minuteVariant = static_cast<MinuteVariant>(minuteVariant);
             } else {
-                Serial.printf("Ignoring invalid minute variant: %lu\n",
+                logger.printf("Ignoring invalid minute variant: %lu\n",
                               static_cast<unsigned long>(minuteVariant));
             }
             break;
@@ -378,7 +379,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 
             if (cooling < FIRE_COOLING_MIN || cooling > FIRE_COOLING_MAX ||
                 sparking < FIRE_SPARKING_MIN || sparking > FIRE_SPARKING_MAX) {
-                Serial.printf("Ignoring invalid fire settings: %lu %lu\n",
+                logger.printf("Ignoring invalid fire settings: %lu %lu\n",
                               static_cast<unsigned long>(cooling),
                               static_cast<unsigned long>(sparking));
                 break;
@@ -408,7 +409,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (itIsVariantIsValid(itIsVariant)) {
                 G.itIsVariant = static_cast<ItIsVariant>(itIsVariant);
             } else {
-                Serial.printf("Ignoring invalid it-is variant: %lu\n",
+                logger.printf("Ignoring invalid it-is variant: %lu\n",
                               static_cast<unsigned long>(itIsVariant));
             }
             break;
@@ -488,7 +489,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             struct timeval tv;
             tv.tv_sec = mktime(&tm);
             tv.tv_usec = 0;
-            Serial.println("Time manually set");
+            logger.println("Time manually set");
             settimeofday(&tv, nullptr);
             break;
         }
@@ -536,7 +537,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (colorTypeIsValid(colorType)) {
                 G.param1 = static_cast<uint8_t>(colorType);
             } else {
-                Serial.printf("Ignoring invalid color type: %lu\n",
+                logger.printf("Ignoring invalid color type: %lu\n",
                               static_cast<unsigned long>(colorType));
                 G.param1 = G.Colortype;
             }
@@ -552,7 +553,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (buildTypeIsValid(buildType)) {
                 G.param1 = static_cast<uint8_t>(buildType);
             } else {
-                Serial.printf("Ignoring invalid build type: %lu\n",
+                logger.printf("Ignoring invalid build type: %lu\n",
                               static_cast<unsigned long>(buildType));
                 G.param1 = static_cast<uint8_t>(G.buildTypeDef);
             }
@@ -566,7 +567,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (whiteTypeIsValid(whiteType)) {
                 G.wType = static_cast<WhiteType>(whiteType);
             } else {
-                Serial.printf("Ignoring invalid white type: %lu\n",
+                logger.printf("Ignoring invalid white type: %lu\n",
                               static_cast<unsigned long>(whiteType));
             }
             break;
@@ -580,7 +581,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                 isValidClockTypeDef(static_cast<uint8_t>(clockTypeDef))) {
                 G.clockTypeDef = static_cast<uint8_t>(clockTypeDef);
             } else {
-                Serial.printf("Ignoring invalid ClockType: %lu\n",
+                logger.printf("Ignoring invalid ClockType: %lu\n",
                               static_cast<unsigned long>(clockTypeDef));
             }
             break;
@@ -617,14 +618,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                                                  submittedApiKey);
                 }
             }
-            Serial.println("write EEPROM!");
-            Serial.print("CityID : ");
-            Serial.println(G.openWeatherMap.cityid);
-            Serial.print("APIkey : ");
+            logger.println("write EEPROM!");
+            logger.print("CityID : ");
+            logger.println(G.openWeatherMap.cityid);
+            logger.print("APIkey : ");
             char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
             sensitive::maskPreservingSuffix(apiKeyMasked,
                                             G.openWeatherMap.apikey);
-            Serial.println(apiKeyMasked);
+            logger.println(apiKeyMasked);
             break;
         }
 
@@ -697,7 +698,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             if (isValidModeCommand(command)) {
                 G.prog = command;
             } else {
-                Serial.printf("Ignoring unknown mode command: %u\n", command);
+                logger.printf("Ignoring unknown mode command: %u\n", command);
             }
         } else if (command < PLACEHOLDER_MAX_SET) {
             G.conf = command;
@@ -708,7 +709,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
         break;
     }
     case WStype_BIN: {
-        Serial.printf("[%u] get binary length: %u\n", num, length);
+        logger.printf("[%u] get binary length: %u\n", num, length);
         break;
     }
     default:

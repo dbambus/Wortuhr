@@ -1,4 +1,5 @@
 #include "Render/RenderPipeline.h"
+#include "TelnetLog.h"
 #include "Transitions/Transition.h"
 #include "WordClockState.h"
 #include <Arduino.h>
@@ -276,7 +277,7 @@ void RenderPipeline::demoMode(uint8_t &_hour, uint8_t &_minute,
             test_minute %= 60;
             test_hour = (test_hour + 1) % 24;
         }
-        Serial.printf("Demo time: %02d:%02d\n", test_hour, test_minute);
+        logger.printf("Demo time: %02d:%02d\n", test_hour, test_minute);
     }
 
     _hour = test_hour;
@@ -305,7 +306,7 @@ void RenderPipeline::loop(struct tm &tm) {
         static bool alreadyReported = false;
         if (!alreadyReported) {
             alreadyReported = true;
-            Serial.println(F("[ERROR] RenderPipeline: geometry mismatch"));
+            logger.println(F("[ERROR] RenderPipeline: geometry mismatch"));
         }
         return;
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Led.h"
+#include "TelnetLog.h"
 #include "WordClockState.h"
 
 extern Led led;
@@ -157,7 +158,7 @@ void SecondsFrame::setInitFrameSector() {
     case SecondVariant::Off:
         break;
     default:
-        Serial.println("[ERROR] Frame.h - Invalid second variant");
+        logger.println("[ERROR] Frame.h - Invalid second variant");
         break;
     }
 }

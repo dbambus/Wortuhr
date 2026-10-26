@@ -4,6 +4,7 @@
 #include "NeoMultiFeature.hpp"
 #include "OpenWeatherMap.h"
 #include "SensitiveData.h"
+#include "TelnetLog.h"
 #include "Transitions/Transition.h"
 #include "WordClockState.h"
 #include "WordClockTypes/ClockType.hpp"
@@ -323,7 +324,7 @@ uint32_t ClockWork::num32BitWithOnesAccordingToColumns() {
 
 void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
     if (doc.overflowed()) {
-        Serial.println("[ERROR] sendJsonToClient(): document capacity too "
+        logger.println("[ERROR] sendJsonToClient(): document capacity too "
                        "small, keys are missing");
     }
 
@@ -334,14 +335,14 @@ void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
     serializeJson(doc, payload);
 
     if (payload.length() != payloadLength) {
-        Serial.printf("[ERROR] sendJsonToClient(): out of memory for %u "
+        logger.printf("[ERROR] sendJsonToClient(): out of memory for %u "
                       "bytes, payload dropped\n",
                       payloadLength + 1);
         return;
     }
 
-    Serial.print("Sending Payload:");
-    Serial.println(payload);
+    logger.print("Sending Payload:");
+    logger.println(payload);
 
     webSocket.sendTXT(client_nr, payload);
 }
@@ -350,7 +351,7 @@ void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
 
 void broadcastJsonToClients(const JsonDocument &doc) {
     if (doc.overflowed()) {
-        Serial.println("[ERROR] broadcastJsonToClients(): document capacity "
+        logger.println("[ERROR] broadcastJsonToClients(): document capacity "
                        "too small, keys are missing");
     }
 
@@ -738,7 +739,7 @@ void ClockWork::displaySymbols(BitmapSymbol symbolNum) {
 //------------------------------------------------------------------------------
 
 void ClockWork::countdownToMidnight() {
-    Serial.printf("Count down: %d\n", 60 - _second);
+    logger.printf("Count down: %d\n", 60 - _second);
     switch (_second) {
     case 50:
         if (!usedClockType->hasOnlyQuarterLayout()) {
@@ -924,7 +925,7 @@ void ClockWork::normalizeMinuteVariant() {
 
 FrontWord ClockWork::getFrontWordForNum(uint8_t min) {
     if (min == 0 || min > 59) {
-        Serial.println("[Error] getFrontWordForNum() out of Bounds");
+        logger.println("[Error] getFrontWordForNum() out of Bounds");
         return FrontWord::error;
     } else {
         return static_cast<FrontWord>(min);
@@ -1523,7 +1524,7 @@ void ClockWork::loop(struct tm &tm) {
 #if GENERAL_VERBOSE
         char currentTime[80];
         strftime(currentTime, sizeof(currentTime), "%F %T (%z)\n", &tm);
-        Serial.printf(currentTime);
+        logger.printf(currentTime);
 #endif
 
         //--------------------------------------------
@@ -1554,7 +1555,7 @@ void ClockWork::loop(struct tm &tm) {
         if (colorChangedByWebsite) {
             eeprom::write();
             colorChangedByWebsite = false;
-            Serial.println("Saved Color");
+            logger.println("Saved Color");
         }
 
         //------------------------------------------------
@@ -1746,7 +1747,7 @@ void ClockWork::loop(struct tm &tm) {
         led.clear();
 
         // G.param1 sets new buildtype
-        Serial.printf("Clock Buildtype: %u\n", G.param1);
+        logger.printf("Clock Buildtype: %u\n", G.param1);
 
         G.buildTypeDef = static_cast<BuildTypeDef>(G.param1);
         eeprom::write();
@@ -1814,21 +1815,21 @@ void ClockWork::loop(struct tm &tm) {
 
     case COMMAND_SET_HARDWARE_PINS: {
         if (!hardwarePinsAreValid()) {
-            Serial.println("Invalid hardware pin configuration, restoring "
+            logger.println("Invalid hardware pin configuration, restoring "
                            "defaults");
             setDefaultHardwarePins();
             i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
         }
 
-        Serial.printf("Hardware LED pin: GPIO%u\n", G.hardwarePins.led);
-        Serial.printf("Hardware power button pin: GPIO%u\n",
+        logger.printf("Hardware LED pin: GPIO%u\n", G.hardwarePins.led);
+        logger.printf("Hardware power button pin: GPIO%u\n",
                       G.hardwarePins.powerButton);
-        Serial.printf("Hardware mode button pin: GPIO%u\n",
+        logger.printf("Hardware mode button pin: GPIO%u\n",
                       G.hardwarePins.modeButton);
-        Serial.printf("Hardware speed button pin: GPIO%u\n",
+        logger.printf("Hardware speed button pin: GPIO%u\n",
                       G.hardwarePins.speedButton);
-        Serial.printf("I2C SDA pin: GPIO%u\n", G.i2cSdaPin);
-        Serial.printf("I2C SCL pin: GPIO%u\n", G.i2cSclPin);
+        logger.printf("I2C SDA pin: GPIO%u\n", G.i2cSdaPin);
+        logger.printf("I2C SCL pin: GPIO%u\n", G.i2cSclPin);
 
         eeprom::write();
         i2cBus::begin(G.i2cSdaPin, G.i2cSclPin);
@@ -1840,7 +1841,7 @@ void ClockWork::loop(struct tm &tm) {
 
     case COMMAND_SET_COLORTYPE: {
         // G.param1 sets new Colortype
-        Serial.printf("LED Colortype: %u\n", G.param1);
+        logger.printf("LED Colortype: %u\n", G.param1);
 
         G.Colortype = G.param1;
         eeprom::write();
@@ -1852,14 +1853,14 @@ void ClockWork::loop(struct tm &tm) {
 
     case COMMAND_SET_CLOCK_TYPE: {
         if (!isValidClockTypeDef(G.clockTypeDef)) {
-            Serial.printf("Ignoring invalid ClockType: %u\n", G.clockTypeDef);
+            logger.printf("Ignoring invalid ClockType: %u\n", G.clockTypeDef);
             break;
         }
 
         led.clear();
         led.show();
         delay(10);
-        Serial.printf("ClockType: %u\n", G.clockTypeDef);
+        logger.printf("ClockType: %u\n", G.clockTypeDef);
 
         usedClockType = getPointer(G.clockTypeDef);
         normalizeMinuteVariant();
@@ -1887,7 +1888,7 @@ void ClockWork::loop(struct tm &tm) {
 
         G.secondsFrameLedCount = G.param1;
         eeprom::write();
-        Serial.printf("Seconds frame LED count: %u\n", G.secondsFrameLedCount);
+        logger.printf("Seconds frame LED count: %u\n", G.secondsFrameLedCount);
 
         reallocateSecondsFrame();
 
@@ -1898,7 +1899,7 @@ void ClockWork::loop(struct tm &tm) {
     case COMMAND_SET_FIRE: {
         if (G.param1) {
             eeprom::write();
-            Serial.printf("Fire: cooling %u, sparking %u\n", G.fireCooling,
+            logger.printf("Fire: cooling %u, sparking %u\n", G.fireCooling,
                           G.fireSparking);
         }
         break;
@@ -1907,14 +1908,14 @@ void ClockWork::loop(struct tm &tm) {
     case COMMAND_SPEED: {
         if (G.param1) {
             eeprom::write();
-            Serial.printf("Effect speed: %u\n", G.effectSpeed);
+            logger.printf("Effect speed: %u\n", G.effectSpeed);
         }
         break;
     }
 
     case COMMAND_SET_HOSTNAME: {
-        Serial.print("Hostname: ");
-        Serial.println(G.hostname);
+        logger.print("Hostname: ");
+        logger.println(G.hostname);
         eeprom::write();
         network.changeHostname(G.hostname);
         break;
@@ -1923,13 +1924,13 @@ void ClockWork::loop(struct tm &tm) {
     case COMMAND_SET_WIFI_DISABLED: {
         eeprom::write();
         delay(100);
-        Serial.println("Conf: WLAN off");
+        logger.println("Conf: WLAN off");
         network.disable();
         break;
     }
 
     case COMMAND_SET_WIFI_AND_RESTART: {
-        Serial.println("Conf: new Wifi Config");
+        logger.println("Conf: new Wifi Config");
         network.resetSettings();
         break;
     }

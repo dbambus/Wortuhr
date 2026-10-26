@@ -1,6 +1,7 @@
 #include "I2CBus.h"
 
-#include "Config.h"         // SDA_PIN_* / SCL_PIN_*
+#include "Config.h" // SDA_PIN_* / SCL_PIN_*
+#include "TelnetLog.h"
 #include "WordClockState.h" // HARDWARE_PIN_DISABLED
 #include <Wire.h>
 
@@ -59,12 +60,12 @@ void begin(uint8_t sdaPin, uint8_t sclPin) {
 #endif
 
     if (!pinsAreEnabled(sdaPin, sclPin)) {
-        Serial.println("I2C disabled");
+        logger.println("I2C disabled");
         return;
     }
 
     Wire.begin(sdaPin, sclPin);
-    Serial.printf("I2C initialized on SDA GPIO%u, SCL GPIO%u\n", sdaPin,
+    logger.printf("I2C initialized on SDA GPIO%u, SCL GPIO%u\n", sdaPin,
                   sclPin);
 }
 

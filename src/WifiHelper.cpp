@@ -6,6 +6,7 @@
 #include "WordClockTypes/ClockType.hpp"
 
 #include "ClockWork.h"
+#include "TelnetLog.h"
 #include <Arduino.h>
 
 extern ClockWork clockWork;
@@ -16,8 +17,8 @@ bool wifiConnected = false;
 
 void logGotIp(const IPAddress &ip) {
     wifiConnected = true;
-    Serial.print("[WiFi] connected, IP: ");
-    Serial.println(ip);
+    logger.print("[WiFi] connected, IP: ");
+    logger.println(ip);
 }
 
 void logDisconnected(int reason) {
@@ -25,7 +26,7 @@ void logDisconnected(int reason) {
         return;
     }
     wifiConnected = false;
-    Serial.printf("[WiFi] connection lost (reason %d)\n", reason);
+    logger.printf("[WiFi] connection lost (reason %d)\n", reason);
 }
 
 #ifdef ESP8266
@@ -61,13 +62,13 @@ void registerWifiEventLogging() {
 //------------------------------------------------------------------------------
 
 void wifiStart() {
-    Serial.printf("\n-- Begin Wlan -- \n");
+    logger.printf("\n-- Begin Wlan -- \n");
 
     char ip_adress[20];
     sprintf(ip_adress, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1],
             WiFi.localIP()[2], WiFi.localIP()[3]);
-    Serial.println(ip_adress);
-    Serial.println("");
+    logger.println(ip_adress);
+    logger.println("");
     // Show IP as scrollingtext
     if (G.bootShowIP) {
         clockWork.initBootShowIp(ip_adress);
@@ -75,5 +76,5 @@ void wifiStart() {
 
     registerWifiEventLogging();
 
-    Serial.printf("-- End  Wlan -- \n\n");
+    logger.printf("-- End  Wlan -- \n\n");
 }

@@ -24,6 +24,7 @@
 #include <WiFiClient.h>
 #include <WiFiUdp.h>
 
+#include "TelnetLog.h"
 #include "WordClockState.h"
 
 #include "ClockType.gen.h"
@@ -148,7 +149,7 @@ void time_is_set() {
             origin = "SNTP";
         }
     }
-    Serial.printf("Set new time: %02d:%02d:%02d (%s)\n", tm.tm_hour, tm.tm_min,
+    logger.printf("Set new time: %02d:%02d:%02d (%s)\n", tm.tm_hour, tm.tm_min,
                   tm.tm_sec, origin.c_str());
 
     // Calc second frame for seconds variants that use a frame
@@ -284,7 +285,7 @@ void ensureHardwarePins() {
         return;
     }
 
-    Serial.println("Invalid hardware pins in EEPROM, restoring defaults");
+    logger.println("Invalid hardware pins in EEPROM, restoring defaults");
     setDefaultHardwarePins();
     eeprom::write();
 }
@@ -296,7 +297,7 @@ void ensureI2CPins() {
         return;
     }
 
-    Serial.println("Invalid I2C pins in EEPROM, restoring defaults");
+    logger.println("Invalid I2C pins in EEPROM, restoring defaults");
     i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
 }
 
@@ -314,7 +315,7 @@ void ensureTransitionType() {
         return;
     }
 
-    Serial.printf(
+    logger.printf(
         "Invalid transition type %u in EEPROM, disabling transition\n",
         G.transitionType);
     G.transitionType = NO_TRANSITION;
@@ -327,7 +328,7 @@ void ensureEffectSpeed() {
         return;
     }
 
-    Serial.printf("Invalid effect speed %u in EEPROM, restoring default\n",
+    logger.printf("Invalid effect speed %u in EEPROM, restoring default\n",
                   G.effectSpeed);
     G.effectSpeed = EFFECT_SPEED_DEFAULT;
 }
@@ -339,7 +340,7 @@ void ensureFireSettings() {
         return;
     }
 
-    Serial.println("Invalid fire settings in EEPROM, restoring defaults");
+    logger.println("Invalid fire settings in EEPROM, restoring defaults");
     G.fireCooling = FIRE_COOLING_DEFAULT;
     G.fireSparking = FIRE_SPARKING_DEFAULT;
 }
@@ -381,7 +382,7 @@ void ensureMinuteVariant() {
 
     if (static_cast<uint8_t>(G.minuteVariant) ==
         LEGACY_MINUTE_VARIANT_IN_WORDS) {
-        Serial.println("Moving minute variant InWords from 4 to 3");
+        logger.println("Moving minute variant InWords from 4 to 3");
         G.minuteVariant = MinuteVariant::InWords;
         return;
     }
@@ -390,7 +391,7 @@ void ensureMinuteVariant() {
         return;
     }
 
-    Serial.printf("Invalid minute variant %u in EEPROM, restoring default\n",
+    logger.printf("Invalid minute variant %u in EEPROM, restoring default\n",
                   static_cast<unsigned>(G.minuteVariant));
     G.minuteVariant = defaultMinuteVariant();
 }
@@ -402,7 +403,7 @@ void ensureSecondVariant() {
         return;
     }
 
-    Serial.printf("Invalid second variant %u in EEPROM, disabling seconds\n",
+    logger.printf("Invalid second variant %u in EEPROM, disabling seconds\n",
                   static_cast<unsigned>(G.secondVariant));
     G.secondVariant = SecondVariant::Off;
 }
@@ -414,7 +415,7 @@ void ensureItIsVariant() {
         return;
     }
 
-    Serial.printf("Invalid it-is variant %u in EEPROM, restoring default\n",
+    logger.printf("Invalid it-is variant %u in EEPROM, restoring default\n",
                   static_cast<unsigned>(G.itIsVariant));
     G.itIsVariant = defaultItIsVariant();
 }
@@ -426,7 +427,7 @@ void ensureColorType() {
         return;
     }
 
-    Serial.printf("Invalid color type %u in EEPROM, restoring default\n",
+    logger.printf("Invalid color type %u in EEPROM, restoring default\n",
                   G.Colortype);
     G.Colortype = DEFAULT_LEDTYPE;
 }
@@ -438,7 +439,7 @@ void ensureBuildType() {
         return;
     }
 
-    Serial.printf("Invalid build type %u in EEPROM, restoring default\n",
+    logger.printf("Invalid build type %u in EEPROM, restoring default\n",
                   static_cast<unsigned>(G.buildTypeDef));
     G.buildTypeDef = DEFAULT_BUILDTYPE;
 }
@@ -450,7 +451,7 @@ void ensureWhiteType() {
         return;
     }
 
-    Serial.printf("Invalid white type %u in EEPROM, restoring default\n",
+    logger.printf("Invalid white type %u in EEPROM, restoring default\n",
                   static_cast<unsigned>(G.wType));
     G.wType = WHITE_LEDTYPE;
 }
@@ -463,7 +464,7 @@ void ensureMinuteLedCount() {
     }
 
     G.minuteLedCount = minuteLedCountFor(G.minuteVariant, MINUTE_LEDS_WIRED_4);
-    Serial.printf("Invalid minute LED count in EEPROM, deriving %u from the "
+    logger.printf("Invalid minute LED count in EEPROM, deriving %u from the "
                   "minute variant\n",
                   G.minuteLedCount);
 }
@@ -477,7 +478,7 @@ void ensureWeatherData() {
     if (G.openWeatherMap.cityid[0] == '\0') {
         strlcpy(G.openWeatherMap.cityid, OWM_CITY_ID,
                 sizeof(G.openWeatherMap.cityid));
-        Serial.println("No OpenWeatherMap city ID in EEPROM, using Config.h");
+        logger.println("No OpenWeatherMap city ID in EEPROM, using Config.h");
     }
 #endif
 #ifdef OWM_API_KEY
@@ -486,7 +487,7 @@ void ensureWeatherData() {
     if (G.openWeatherMap.apikey[0] == '\0') {
         strlcpy(G.openWeatherMap.apikey, OWM_API_KEY,
                 sizeof(G.openWeatherMap.apikey));
-        Serial.println("No OpenWeatherMap API key in EEPROM, using Config.h");
+        logger.println("No OpenWeatherMap API key in EEPROM, using Config.h");
     }
 #endif
 }
@@ -501,10 +502,10 @@ void setup() {
     //-------------------------------------
 #if GENERAL_VERBOSE
     Serial.begin(115200);
-    Serial.println("");
-    Serial.println("--------------------------------------");
-    Serial.println("Begin Setup");
-    Serial.println("--------------------------------------");
+    logger.println("");
+    logger.println("--------------------------------------");
+    logger.println("Begin Setup");
+    logger.println("--------------------------------------");
 #endif
     //-------------------------------------
     // Read / initialize EEPROM
@@ -544,14 +545,14 @@ void setup() {
     // Read the power cycle count from EEPROM
     powerCycleCount = EEPROM.read(POWER_CYCLE_COUNT_ADDRESS);
     incrementPowerCycleCount();
-    Serial.print("Power cycle count: ");
-    Serial.println(powerCycleCount);
+    logger.print("Power cycle count: ");
+    logger.println(powerCycleCount);
     if (powerCycleCount == CAPTIVE_PORTAL_POWER_CYCLE_COUNT) {
-        Serial.println("Enable captive portal");
+        logger.println("Enable captive portal");
         network.startConfigPortal();
     } else if (powerCycleCount == FACTORY_RESET_POWER_CYCLE_COUNT) {
         G.sernr++;
-        Serial.println("Reset to initial values");
+        logger.println("Reset to initial values");
     }
 
     //-------------------------------------
@@ -678,7 +679,7 @@ void setup() {
         i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
 
         eeprom::write();
-        Serial.println("EEPROM written");
+        logger.println("EEPROM written");
     }
 
     ensureWeatherData();
@@ -691,14 +692,14 @@ void setup() {
     //-------------------------------------
 
     if (!isValidModeCommand(G.prog)) {
-        Serial.printf("Invalid Programm %u in EEPROM, using word clock\n",
+        logger.printf("Invalid Programm %u in EEPROM, using word clock\n",
                       G.prog);
         G.prog = COMMAND_MODE_WORD_CLOCK;
         eeprom::write();
     }
 
     if (!isValidClockTypeDef(G.clockTypeDef)) {
-        Serial.printf("Invalid ClockType %u in EEPROM, using default %u\n",
+        logger.printf("Invalid ClockType %u in EEPROM, using default %u\n",
                       G.clockTypeDef, DEFAULT_LAYOUT);
         G.clockTypeDef = DEFAULT_LAYOUT;
         eeprom::write();
@@ -728,7 +729,7 @@ void setup() {
 
     clockWork.initHardwareButtons();
 
-    Serial.println("LED Init");
+    logger.println("LED Init");
     clockWork.initLedStrip(G.Colortype);
     if (G.bootLedBlink) {
         clockWork.initBootLedBlink();
@@ -752,14 +753,14 @@ void setup() {
     //-------------------------------------
 
     if (i2cBus::pinsAreEnabled(G.i2cSdaPin, G.i2cSclPin) && RTC.begin()) {
-        Serial.println("External real-time clock found");
+        logger.println("External real-time clock found");
         struct timeval tv;
         tv.tv_sec = RTC.now().unixtime();
         settimeofday(&tv, nullptr);
         network.rtcMode();
         externalRTC = true;
     } else {
-        Serial.println("No external real-time clock found");
+        logger.println("No external real-time clock found");
         externalRTC = false;
     }
 #ifdef ESP8266
@@ -778,9 +779,10 @@ void setup() {
     network.setup(G.hostname);
 #if WIFI_VERBOSE
     int strength = network.getQuality();
-    Serial.printf("Signal strength: %i\n", strength);
+    logger.printf("Signal strength: %i\n", strength);
 #endif
     wifiStart();
+    logger.begin();
     ensureTimezone();
     configTzTime(G.timezone, G.timeserver);
 
@@ -821,7 +823,7 @@ void setup() {
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
 
-    Serial.println("Websocket started");
+    logger.println("Websocket started");
 
     //-------------------------------------
     // mDNS
@@ -831,30 +833,30 @@ void setup() {
     MDNS.addService("ota", "tcp", 81);
 
     //-------------------------------------
-    Serial.println("--------------------------------------");
-    Serial.println("ESP Wordclock");
-    Serial.printf("Version         : %s\n", VERSION);
+    logger.println("--------------------------------------");
+    logger.println("ESP Wordclock");
+    logger.printf("Version         : %s\n", VERSION);
 
 #ifdef ESP8266
-    Serial.printf("Chip ID         : %08X\n", ESP.getChipId());
-    Serial.printf("CPU Speed       : %u MHz \n\n", ESP.getCpuFreqMHz());
+    logger.printf("Chip ID         : %08X\n", ESP.getChipId());
+    logger.printf("CPU Speed       : %u MHz \n\n", ESP.getCpuFreqMHz());
 #elif defined(ESP32)
-    Serial.printf("Chip ID         : %08X\n", (uint32_t)ESP.getEfuseMac());
-    Serial.printf("CPU Speed       : %u MHz \n\n", getCpuFrequencyMhz());
+    logger.printf("Chip ID         : %08X\n", (uint32_t)ESP.getEfuseMac());
+    logger.printf("CPU Speed       : %u MHz \n\n", getCpuFrequencyMhz());
 #endif
 
-    Serial.printf("Flash Size : %u KByte\n", ESP.getFlashChipSize() / 1024);
-    Serial.printf("Flash ide Speed : %u\n\n", ESP.getFlashChipSpeed());
+    logger.printf("Flash Size : %u KByte\n", ESP.getFlashChipSize() / 1024);
+    logger.printf("Flash ide Speed : %u\n\n", ESP.getFlashChipSpeed());
 
-    Serial.printf("Free Heap Size  : %u Byte\n", ESP.getFreeHeap());
-    Serial.printf("Sketch Size     : %u Byte \n", ESP.getSketchSize());
-    Serial.printf("Free Sketch Size: %u Byte \n\n", ESP.getFreeSketchSpace());
+    logger.printf("Free Heap Size  : %u Byte\n", ESP.getFreeHeap());
+    logger.printf("Sketch Size     : %u Byte \n", ESP.getSketchSize());
+    logger.printf("Free Sketch Size: %u Byte \n\n", ESP.getFreeSketchSpace());
 
-    Serial.printf("SDK Version     : %s\n", ESP.getSdkVersion());
-    Serial.print("COMPILED        : ");
-    Serial.print(__DATE__);
-    Serial.print(" ");
-    Serial.println(__TIME__);
+    logger.printf("SDK Version     : %s\n", ESP.getSdkVersion());
+    logger.print("COMPILED        : ");
+    logger.print(__DATE__);
+    logger.print(" ");
+    logger.println(__TIME__);
 
     //-------------------------------------
     // Auto brightness
@@ -869,21 +871,21 @@ void setup() {
 
     if (bh1750Address != 0) {
         lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, bh1750Address);
-        Serial.println("BH1750 initialized");
+        logger.println("BH1750 initialized");
         bh1750Initialized = true;
         autoBrightUsingBH1750 = true;
     } else {
-        Serial.println("BH1750 initialisation error, using LDR if available");
+        logger.println("BH1750 initialisation error, using LDR if available");
         bh1750Initialized = false;
         autoBrightUsingBH1750 = false;
     }
 
     //-------------------------------------
 
-    Serial.println("--------------------------------------");
-    Serial.println("End Setup");
-    Serial.println("--------------------------------------");
-    Serial.println("");
+    logger.println("--------------------------------------");
+    logger.println("End Setup");
+    logger.println("--------------------------------------");
+    logger.println("");
 
     //-------------------------------------
     // Reset Powercycle Counter
@@ -928,6 +930,7 @@ void loop() {
     // Network
     //------------------------------------------------
     network.loop();
+    logger.loop();
 #ifdef ESP8266
     MDNS.update();
 #endif

@@ -1,5 +1,6 @@
 #include "PortalSettings.h"
 
+#include "TelnetLog.h"
 #include "WordClockState.h"
 
 namespace eeprom {
@@ -194,7 +195,7 @@ void apply(const ArgLookup &arg) {
         G.buildTypeDef = static_cast<BuildTypeDef>(number);
     }
 
-    Serial.println("Settings saved from captive portal");
+    logger.println("Settings saved from captive portal");
     eeprom::write();
     parametersChanged = true;
     G.conf =

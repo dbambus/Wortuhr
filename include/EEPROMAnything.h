@@ -1,4 +1,5 @@
 #include "SensitiveData.h"
+#include "TelnetLog.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <string.h>
@@ -20,81 +21,81 @@ template <size_t sourceSize>
 void printSafeString(const char *label, const char (&source)[sourceSize]) {
     char buffer[sourceSize + 1] = {0};
     sensitive::copyBoundedString(buffer, source);
-    Serial.printf("%s%s\n", label, buffer);
+    logger.printf("%s%s\n", label, buffer);
 }
 
 void printMaskedPassword() {
     char passMasked[sizeof(G.mqtt.password) + 1] = {0};
     sensitive::maskPreservingSuffix(passMasked, G.mqtt.password);
-    Serial.printf("MQTT_Pass (masked): %s\n", passMasked);
+    logger.printf("MQTT_Pass (masked): %s\n", passMasked);
 }
 
 void printMaskedOpenWeatherMapApiKey() {
     char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
     sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
-    Serial.printf("OWM_apikey (masked): %s\n", apiKeyMasked);
+    logger.printf("OWM_apikey (masked): %s\n", apiKeyMasked);
 }
 
 void printConfig() {
-    Serial.printf("Version   : %s\n", VERSION);
-    Serial.printf("Sernr     : %u\n", G.sernr);
-    Serial.printf("Programm  : %u\n", G.prog);
-    Serial.printf("Conf      : %u\n", G.conf);
-    Serial.printf("FgCol.H   : %f\n", G.color[Foreground].H);
-    Serial.printf("FgCol.S   : %f\n", G.color[Foreground].S);
-    Serial.printf("FgCol.V   : %f\n", G.color[Foreground].B);
-    Serial.printf("BgCol.H   : %f\n", G.color[Background].H);
-    Serial.printf("BgCol.S   : %f\n", G.color[Background].S);
-    Serial.printf("BgCol.V   : %f\n", G.color[Background].B);
-    Serial.printf("FrCol.H   : %f\n", G.color[Frame].H);
-    Serial.printf("FrCol.S   : %f\n", G.color[Frame].S);
-    Serial.printf("FrCol.V   : %f\n", G.color[Frame].B);
+    logger.printf("Version   : %s\n", VERSION);
+    logger.printf("Sernr     : %u\n", G.sernr);
+    logger.printf("Programm  : %u\n", G.prog);
+    logger.printf("Conf      : %u\n", G.conf);
+    logger.printf("FgCol.H   : %f\n", G.color[Foreground].H);
+    logger.printf("FgCol.S   : %f\n", G.color[Foreground].S);
+    logger.printf("FgCol.V   : %f\n", G.color[Foreground].B);
+    logger.printf("BgCol.H   : %f\n", G.color[Background].H);
+    logger.printf("BgCol.S   : %f\n", G.color[Background].S);
+    logger.printf("BgCol.V   : %f\n", G.color[Background].B);
+    logger.printf("FrCol.H   : %f\n", G.color[Frame].H);
+    logger.printf("FrCol.S   : %f\n", G.color[Frame].S);
+    logger.printf("FrCol.V   : %f\n", G.color[Frame].B);
     printSafeString("Zeitserver: ", G.timeserver);
     printSafeString("Zeitzone  : ", G.timezone);
     printSafeString("Lauftext  : ", G.scrollingText);
-    Serial.printf("H6        : %u\n", G.h6);
-    Serial.printf("H8        : %u\n", G.h8);
-    Serial.printf("H12       : %u\n", G.h12);
-    Serial.printf("H16       : %u\n", G.h16);
-    Serial.printf("H18       : %u\n", G.h18);
-    Serial.printf("H20       : %u\n", G.h20);
-    Serial.printf("H22       : %u\n", G.h22);
-    Serial.printf("H24       : %u\n", G.h24);
-    Serial.printf("ClockType    : %u\n", G.clockTypeDef);
+    logger.printf("H6        : %u\n", G.h6);
+    logger.printf("H8        : %u\n", G.h8);
+    logger.printf("H12       : %u\n", G.h12);
+    logger.printf("H16       : %u\n", G.h16);
+    logger.printf("H18       : %u\n", G.h18);
+    logger.printf("H20       : %u\n", G.h20);
+    logger.printf("H22       : %u\n", G.h22);
+    logger.printf("H24       : %u\n", G.h24);
+    logger.printf("ClockType    : %u\n", G.clockTypeDef);
 
-    Serial.printf("MQTT_State    : %u\n", G.mqtt.state);
+    logger.printf("MQTT_State    : %u\n", G.mqtt.state);
     printSafeString("MQTT_Server    : ", G.mqtt.serverAdress);
     printSafeString("MQTT_User    : ", G.mqtt.user);
     printMaskedPassword();
     printSafeString("MQTT_ClientId    : ", G.mqtt.clientId);
     printSafeString("MQTT_Topic    : ", G.mqtt.topic);
-    Serial.printf("MQTT_Port    : %u\n", G.mqtt.port);
+    logger.printf("MQTT_Port    : %u\n", G.mqtt.port);
 
-    Serial.printf("autoBrightEnabled    : %u\n", G.autoBrightEnabled);
-    Serial.printf("autoBrightMin    : %u\n", G.autoBrightMin);
-    Serial.printf("autoBrightMax    : %u\n", G.autoBrightMax);
-    Serial.printf("autoBrightPeak    : %u\n", G.autoBrightPeak);
-    Serial.printf("transitionDuration    : %u\n", G.transitionDuration);
-    Serial.printf("transitionType    : %u\n", G.transitionType);
-    Serial.printf("colorize    : %u\n", G.colorize);
-    Serial.printf("transitionDemo    : %u\n", G.transitionDemo);
+    logger.printf("autoBrightEnabled    : %u\n", G.autoBrightEnabled);
+    logger.printf("autoBrightMin    : %u\n", G.autoBrightMin);
+    logger.printf("autoBrightMax    : %u\n", G.autoBrightMax);
+    logger.printf("autoBrightPeak    : %u\n", G.autoBrightPeak);
+    logger.printf("transitionDuration    : %u\n", G.transitionDuration);
+    logger.printf("transitionType    : %u\n", G.transitionType);
+    logger.printf("colorize    : %u\n", G.colorize);
+    logger.printf("transitionDemo    : %u\n", G.transitionDemo);
 
-    Serial.printf("bootLedBlink    : %u\n", G.bootLedBlink);
-    Serial.printf("bootLedSweep    : %u\n", G.bootLedSweep);
-    Serial.printf("bootShowWifi    : %u\n", G.bootShowWifi);
-    Serial.printf("bootShowIP    : %u\n", G.bootShowIP);
-    Serial.printf("ledPin    : %u\n", G.hardwarePins.led);
-    Serial.printf("powerButtonPin    : %u\n", G.hardwarePins.powerButton);
-    Serial.printf("modeButtonPin    : %u\n", G.hardwarePins.modeButton);
-    Serial.printf("speedButtonPin    : %u\n", G.hardwarePins.speedButton);
-    Serial.printf("i2cSdaPin    : %u\n", G.i2cSdaPin);
-    Serial.printf("i2cSclPin    : %u\n", G.i2cSclPin);
-    Serial.printf("Colortype    : %u\n", G.Colortype);
+    logger.printf("bootLedBlink    : %u\n", G.bootLedBlink);
+    logger.printf("bootLedSweep    : %u\n", G.bootLedSweep);
+    logger.printf("bootShowWifi    : %u\n", G.bootShowWifi);
+    logger.printf("bootShowIP    : %u\n", G.bootShowIP);
+    logger.printf("ledPin    : %u\n", G.hardwarePins.led);
+    logger.printf("powerButtonPin    : %u\n", G.hardwarePins.powerButton);
+    logger.printf("modeButtonPin    : %u\n", G.hardwarePins.modeButton);
+    logger.printf("speedButtonPin    : %u\n", G.hardwarePins.speedButton);
+    logger.printf("i2cSdaPin    : %u\n", G.i2cSdaPin);
+    logger.printf("i2cSclPin    : %u\n", G.i2cSclPin);
+    logger.printf("Colortype    : %u\n", G.Colortype);
     printMaskedOpenWeatherMapApiKey();
     printSafeString("OWM_city  : ", G.openWeatherMap.cityid);
 
     for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
-        Serial.printf("Birthday%1u: %02u.%02u\n", i, G.birthday[i].day,
+        logger.printf("Birthday%1u: %02u.%02u\n", i, G.birthday[i].day,
                       G.birthday[i].month);
     }
 }

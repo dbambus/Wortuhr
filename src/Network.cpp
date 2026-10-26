@@ -1,6 +1,7 @@
 #include "Network.h"
 
 #include "Config.h" // WIFI_VERBOSE, MANUAL_WIFI_SETTINGS, CP_* ...
+#include "TelnetLog.h"
 #include <WiFiManager.h>
 
 #if defined(ESP8266)
@@ -36,7 +37,7 @@ void applyPortalTime(time_t utc) {
     if (utc < MIN_VALID_TIME || !portalSetTime) {
         return;
     }
-    Serial.println("Time set from captive portal");
+    logger.println("Time set from captive portal");
     portalSetTime(utc);
 }
 

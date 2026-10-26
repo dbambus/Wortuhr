@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "Led.h"
 #include "SensitiveData.h"
+#include "TelnetLog.h"
 #include "WordClockState.h"
 #include "WordClockTypes/ClockType.hpp"
 #include <Arduino.h>
@@ -54,7 +55,7 @@ void OpenWMap::calcWeatherClockface() {
 void OpenWMap::loop() {
     if (forecastValid && millis() - forecastMillis > forecastMaxAgeMs) {
         forecastValid = false;
-        Serial.println("Weather forecast is outdated, hiding it");
+        logger.println("Weather forecast is outdated, hiding it");
     }
 
     if (_second % 10 == 0) {
@@ -89,7 +90,7 @@ bool OpenWMap::connectToServer() {
 #endif
         if (resolved != 1) {
             serverIp = IPAddress();
-            Serial.println("DNS lookup for Openweathermap.org failed");
+            logger.println("DNS lookup for Openweathermap.org failed");
             return false;
         }
     }
@@ -102,7 +103,7 @@ bool OpenWMap::connectToServer() {
 #endif
     if (!ok) {
         serverIp = IPAddress();
-        Serial.println("Connection to Openweathermap.org failed");
+        logger.println("Connection to Openweathermap.org failed");
     }
     return ok;
 }
@@ -110,10 +111,10 @@ bool OpenWMap::connectToServer() {
 //------------------------------------------------------------------------------
 
 void OpenWMap::startWeatherRequest() {
-    Serial.println("");
-    Serial.println("--------------------------------------");
-    Serial.println("Connecting to Openweathermap.org");
-    Serial.println("--------------------------------------");
+    logger.println("");
+    logger.println("--------------------------------------");
+    logger.println("Connecting to Openweathermap.org");
+    logger.println("--------------------------------------");
 
     char resource[100];
     buildResource(resource, G.openWeatherMap.apikey);
@@ -123,8 +124,8 @@ void OpenWMap::startWeatherRequest() {
     char maskedResource[sizeof(resource)];
     buildResource(maskedResource, apiKeyMasked);
 
-    Serial.print("Calling URL: ");
-    Serial.println(maskedResource);
+    logger.print("Calling URL: ");
+    logger.println(maskedResource);
 
     if (!connectToServer()) {
         return;
@@ -171,10 +172,10 @@ void OpenWMap::pollWeatherResponse() {
     }
 
     if (!weatherClient.connected()) {
-        Serial.println("Connection closed before response header ended");
+        logger.println("Connection closed before response header ended");
         finishWeatherRequest();
     } else if (millis() - requestStartMillis > responseTimeoutMs) {
-        Serial.println("Timeout while waiting for weather response");
+        logger.println("Timeout while waiting for weather response");
         finishWeatherRequest();
     }
 }
@@ -198,32 +199,32 @@ void OpenWMap::processWeatherResponse() {
     auto error = deserializeJson(doc, weatherClient,
                                  DeserializationOption::Filter(filter));
     if (error) {
-        Serial.print(F("deserializeJson() failed with code "));
-        Serial.println(error.c_str());
+        logger.print(F("deserializeJson() failed with code "));
+        logger.println(error.c_str());
         return;
     }
 
 #if WEATHER_VERBOSE
-    Serial.printf("Weather body parsed in %lu ms: ",
+    logger.printf("Weather body parsed in %lu ms: ",
                   static_cast<unsigned long>(millis() - parseStartMillis));
     serializeJson(doc, Serial);
-    Serial.println();
+    logger.println();
 #endif
 
     if (doc["cod"].as<int>() != 200 ||
         doc["list"].size() < 2 * forecast::slots) {
-        Serial.print("OpenWeatherMap error ");
+        logger.print("OpenWeatherMap error ");
         serializeJson(doc["cod"], Serial);
-        Serial.print(": ");
+        logger.print(": ");
         serializeJson(doc["message"], Serial);
-        Serial.println();
+        logger.println();
         return;
     }
 
 #if WEATHER_VERBOSE
-    Serial.print("*** ");
-    Serial.print(doc["city"]["name"].as<const char *>());
-    Serial.println(" ***");
+    logger.print("*** ");
+    logger.print(doc["city"]["name"].as<const char *>());
+    logger.println(" ***");
 #endif
 
     for (uint8_t slot = 0; slot < forecast::slots; slot++) {
@@ -232,22 +233,22 @@ void OpenWMap::processWeatherResponse() {
         const double temp = entry["main"]["temp"];
 
 #if WEATHER_VERBOSE
-        Serial.println("----------");
-        Serial.printf("+%dh\n", 6 * (slot + 1));
-        Serial.print("Type: ");
-        Serial.println(entry["weather"][0]["description"].as<const char *>());
-        Serial.print("Wetter ID: ");
-        Serial.println(weatherId);
-        Serial.print("Temp: ");
-        Serial.print(temp);
-        Serial.println("°C");
+        logger.println("----------");
+        logger.printf("+%dh\n", 6 * (slot + 1));
+        logger.print("Type: ");
+        logger.println(entry["weather"][0]["description"].as<const char *>());
+        logger.print("Wetter ID: ");
+        logger.println(weatherId);
+        logger.print("Temp: ");
+        logger.print(temp);
+        logger.println("°C");
 #endif
 
         wTemp[slot] = forecast::temperatureStep(temp);
         wWeather[slot] =
             forecast::conditionGroup(static_cast<uint16_t>(weatherId));
         if (wWeather[slot] == 0) {
-            Serial.printf("[ERROR] Unknown weather id %d\n", weatherId);
+            logger.printf("[ERROR] Unknown weather id %d\n", weatherId);
         }
     }
 
@@ -256,9 +257,9 @@ void OpenWMap::processWeatherResponse() {
     forecastMillis = millis();
 
 #if WEATHER_VERBOSE
-    Serial.println("Hour");
-    Serial.println(_hour);
-    Serial.println("----------");
+    logger.println("Hour");
+    logger.println(_hour);
+    logger.println("----------");
     printDeterminedData();
 #endif
 }
@@ -268,11 +269,11 @@ void OpenWMap::processWeatherResponse() {
 void OpenWMap::printDeterminedData() {
     for (uint8_t slot = 0; slot < forecast::slots; slot++) {
         const int hours = 6 * (slot + 1);
-        Serial.printf("Temp_%d - %d\n", hours, wTemp[slot]);
-        Serial.printf("wWeather%d - %u\n", hours, wWeather[slot]);
-        Serial.println("--------- ");
+        logger.printf("Temp_%d - %d\n", hours, wTemp[slot]);
+        logger.printf("wWeather%d - %u\n", hours, wWeather[slot]);
+        logger.println("--------- ");
     }
-    Serial.print("daytime - ");
-    Serial.println(daytime);
-    Serial.println("--------- ");
+    logger.print("daytime - ");
+    logger.println(daytime);
+    logger.println("--------- ");
 }

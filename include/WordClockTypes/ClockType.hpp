@@ -4,6 +4,7 @@
 #include <string.h> // memset (resetWordIds)
 
 #include "FrontWord.h"
+#include "TelnetLog.h"
 
 enum class LanguageAbbreviation {
     DE,
@@ -313,7 +314,7 @@ protected:
 
         if (index >= numPixels && !alreadyReported) {
             alreadyReported = true;
-            Serial.printf("[ERROR] getFrontMatrixIndex(): index %u exceeds "
+            logger.printf("[ERROR] getFrontMatrixIndex(): index %u exceeds "
                           "%u pixels\n",
                           index, numPixels);
         }

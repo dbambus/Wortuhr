@@ -7,6 +7,7 @@
 #include "Mqtt.h"
 
 #include "Led.h"
+#include "TelnetLog.h"
 #include "WebPageAdapter.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
@@ -96,7 +97,7 @@ static bool connectToBroker() {
     const int resolved = WiFi.hostByName(G.mqtt.serverAdress, brokerIp);
 #endif
     if (resolved != 1) {
-        Serial.println("MQTT: DNS lookup for broker failed");
+        logger.println("MQTT: DNS lookup for broker failed");
         mqttFailure = "server-not-found";
         return false;
     }
@@ -109,7 +110,7 @@ static bool connectToBroker() {
         client.connect(brokerIp, G.mqtt.port, MQTT_CONNECT_TIMEOUT_MS);
 #endif
     if (!ok) {
-        Serial.println("MQTT: Connection to broker failed");
+        logger.println("MQTT: Connection to broker failed");
         mqttFailure = "unreachable";
     }
     return ok;
@@ -124,14 +125,14 @@ static bool connectToBroker() {
 // can exceed the configured buffer size.
 static bool publishJsonStream(const String &topic, const JsonDocument &doc) {
     if (doc.overflowed()) {
-        Serial.print("MQTT: Discovery document overflowed for topic ");
-        Serial.println(topic);
+        logger.print("MQTT: Discovery document overflowed for topic ");
+        logger.println(topic);
         return false;
     }
     size_t len = measureJson(doc);
     if (!mqttClient.beginPublish(topic.c_str(), len, true)) {
-        Serial.print("MQTT: Failed to begin discovery publish on ");
-        Serial.println(topic);
+        logger.print("MQTT: Failed to begin discovery publish on ");
+        logger.println(topic);
         return false;
     }
     serializeJson(doc, mqttClient);
@@ -315,11 +316,11 @@ bool Mqtt::processState(const JsonDocument &doc) {
         const char *state = doc["state"] | "";
         bool stateChanged = false;
         if (!strcmp(state, "ON")) {
-            Serial.println("MQTT: Turning ON");
+            logger.println("MQTT: Turning ON");
             led.setState(true);
             stateChanged = true;
         } else if (!strcmp(state, "OFF")) {
-            Serial.println("MQTT: Turning OFF");
+            logger.println("MQTT: Turning OFF");
             led.setState(false);
             stateChanged = true;
         }
@@ -501,7 +502,7 @@ bool Mqtt::processBrightness(const JsonDocument &doc) {
     if (doc.containsKey("brightness")) {
         // Manual brightness commands must not fight the ambient-light loop.
         if (G.autoBrightEnabled) {
-            Serial.println("MQTT: Ignoring brightness change - auto brightness "
+            logger.println("MQTT: Ignoring brightness change - auto brightness "
                            "is enabled");
             return false;
         }
@@ -514,8 +515,8 @@ bool Mqtt::processBrightness(const JsonDocument &doc) {
         G.color[Foreground] =
             HsbColor(G.color[Foreground].H, G.color[Foreground].S, brightness);
         G.color[GradientEnd].B = brightness;
-        Serial.print("MQTT: Setting manual brightness: ");
-        Serial.println(brightness);
+        logger.print("MQTT: Setting manual brightness: ");
+        logger.println(brightness);
 
         parametersChanged = true;
         webStateChanged = true;
@@ -595,8 +596,8 @@ void Mqtt::init() {
                                    "offline"); // Last Will Message
         }
         if (!connected) {
-            Serial.print("MQTT: Broker refused connection, state ");
-            Serial.println(mqttClient.state());
+            logger.print("MQTT: Broker refused connection, state ");
+            logger.println(mqttClient.state());
             mqttFailure = failureForState(mqttClient.state());
             return;
         }
@@ -622,7 +623,7 @@ void Mqtt::init() {
     mqttClient.subscribe(topic("transition_colorize/set").c_str());
     mqttClient.subscribe(topic("transition_duration/set").c_str());
 
-    Serial.println("MQTT Connected");
+    logger.println("MQTT Connected");
     sendDiscovery(); // Re-announce entities so they self-heal after a
                      // broker restart or purge of retained config
     sendState();     // Send initial state
@@ -651,14 +652,14 @@ void Mqtt::reInit() {
 
     if (millis() - lastRetryTime >= retryIntervall) {
         retryCount++;
-        Serial.print("Reconnecting to MQTT Server. Try ");
-        Serial.println(retryCount);
+        logger.print("Reconnecting to MQTT Server. Try ");
+        logger.println(retryCount);
         lastRetryTime = millis();
 
         init();
 
         if (retryCount >= MAX_RETRIES_WITHIN_5_MINUTES) {
-            Serial.println("Switched to hourly MQTT connect retry");
+            logger.println("Switched to hourly MQTT connect retry");
             retryIntervall = RETRY_INTERVALL;
             retryCount = 0;
         }
@@ -784,10 +785,10 @@ static void applyTransitionSelect(const char *id, const char *msg,
         eeprom::write();
         webStateChanged = true;
     } else {
-        Serial.print("MQTT: Unknown option for ");
-        Serial.print(id);
-        Serial.print(": ");
-        Serial.println(msg);
+        logger.print("MQTT: Unknown option for ");
+        logger.print(id);
+        logger.print(": ");
+        logger.println(msg);
     }
     mqttClient.publish((topic(id) + "/state").c_str(),
                        labelForValue(table, count, field, table[0].label),
@@ -801,8 +802,8 @@ void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
     // Copy into a fixed buffer so hostile or malformed MQTT payloads cannot
     // allocate arbitrarily large stack frames.
     if (length >= MQTT_MAX_PAYLOAD_LENGTH) {
-        Serial.print("MQTT: Ignoring oversized payload on topic ");
-        Serial.println(topicStr);
+        logger.print("MQTT: Ignoring oversized payload on topic ");
+        logger.println(topicStr);
         return;
     }
 
@@ -814,7 +815,7 @@ void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
     // device repopulates after an HA restart, even if retained config was lost.
     if (topicStr == HOMEASSISTANT_STATUS_TOPIC) {
         if (strcmp(msg, "online") == 0 && mqttInstance) {
-            Serial.println("MQTT: Home Assistant online, re-announcing");
+            logger.println("MQTT: Home Assistant online, re-announcing");
             mqttInstance->sendDiscovery();
             mqttInstance->sendState();
         }
@@ -826,15 +827,15 @@ void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
         bool autoBrightnessChanged = false;
         if (strcmp(msg, "ON") == 0) {
             G.autoBrightEnabled = 1;
-            Serial.println("MQTT: Auto Brightness ON");
+            logger.println("MQTT: Auto Brightness ON");
             autoBrightnessChanged = true;
         } else if (strcmp(msg, "OFF") == 0) {
             G.autoBrightEnabled = 0;
-            Serial.println("MQTT: Auto Brightness OFF");
+            logger.println("MQTT: Auto Brightness OFF");
             autoBrightnessChanged = true;
         } else {
-            Serial.print("MQTT: Unknown command: ");
-            Serial.println(msg);
+            logger.print("MQTT: Unknown command: ");
+            logger.println(msg);
         }
 
         if (autoBrightnessChanged) {
@@ -874,8 +875,8 @@ void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
     StaticJsonDocument<512> doc;
     DeserializationError error = deserializeJson(doc, msg);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.c_str());
+        logger.print(F("deserializeJson() failed: "));
+        logger.println(error.c_str());
         return;
     }
 
