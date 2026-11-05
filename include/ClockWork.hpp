@@ -1506,67 +1506,260 @@ void ClockWork::clearClockByProgInit() {
 // Loop Functions
 //------------------------------------------------------------------------------
 
-void ClockWork::loop(struct tm &tm) {
-    unsigned long currentMillis = millis();
-    countMillisSpeed += currentMillis - previousMillis;
-    previousMillis = currentMillis;
-    loopHardwareButtons();
-
-    // Faster runtime for demo
-    renderPipeline.demoMode(_hour, _minute, _second);
-
-    //------------------------------------------------
-    // Seconds and LDR Routine
-    //------------------------------------------------
-    if (lastSecond != _second) {
-
+void ClockWork::loopEverySecond(struct tm &tm) {
 #if GENERAL_VERBOSE
-        char currentTime[80];
-        strftime(currentTime, sizeof(currentTime), "%F %T (%z)\n", &tm);
-        Serial.printf(currentTime);
+    char currentTime[80];
+    strftime(currentTime, sizeof(currentTime), "%F %T (%z)\n", &tm);
+    Serial.printf(currentTime);
 #endif
 
-        //--------------------------------------------
-        // Weather Loop
-        //--------------------------------------------
-        if (usedClockType->hasWeatherLayout()) {
-            weather.loop();
-        }
-
-        //--------------------------------------------
-        // Auto Brightness Logic
-        //--------------------------------------------
-        loopAutoBrightLogic();
-
-        if (G.prog == COMMAND_IDLE && G.conf == COMMAND_IDLE) {
-            led.clear();
-            G.prog = COMMAND_MODE_WORD_CLOCK;
-        }
-
-        lastSecond = _second;
+    if (usedClockType->hasWeatherLayout()) {
+        weather.loop();
     }
 
-    //------------------------------------------------
-    // Minute
-    //------------------------------------------------
-    if (lastMinute != _minute) {
-        lastMinute = _minute;
-        if (colorChangedByWebsite) {
-            eeprom::write();
-            colorChangedByWebsite = false;
-            Serial.println("Saved Color");
-        }
+    loopAutoBrightLogic();
 
-        //------------------------------------------------
-        // MQTT
-        //------------------------------------------------
+    if (G.prog == COMMAND_IDLE && G.conf == COMMAND_IDLE) {
+        led.clear();
+        G.prog = COMMAND_MODE_WORD_CLOCK;
+    }
+}
 
-        sendMQTTUpdate();
+//------------------------------------------------------------------------------
+
+void ClockWork::loopEveryMinute() {
+    if (colorChangedByWebsite) {
+        eeprom::write();
+        colorChangedByWebsite = false;
+        Serial.println("Saved Color");
     }
 
-    const bool setCommandPending =
-        G.conf != COMMAND_IDLE && G.conf < PLACEHOLDER_MAX_SET;
+    sendMQTTUpdate();
+}
 
+//------------------------------------------------------------------------------
+
+void ClockWork::sendMqttValues() {
+    DynamicJsonDocument config(512);
+    config["command"] = "mqtt";
+    config["MQTT_State"] = G.mqtt.state;
+    config["MQTT_Port"] = G.mqtt.port;
+    config["MQTT_Server"] = G.mqtt.serverAdress;
+    config["MQTT_User"] = G.mqtt.user;
+
+    // don't expose password:
+    char passMasked[sizeof(G.mqtt.password) + 1] = {0};
+    sensitive::maskPreservingSuffix(passMasked, G.mqtt.password);
+    config["MQTT_Pass"] = passMasked;
+
+    config["MQTT_ClientId"] = G.mqtt.clientId;
+    config["MQTT_Topic"] = G.mqtt.topic;
+    config["MQTT_Status"] = mqtt.status();
+
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendConfigValues() {
+    DynamicJsonDocument config(1280);
+    config["command"] = "config";
+    config["ssid"] = network.getSSID();
+    config["timeserver"] = G.timeserver;
+    config["timezone"] = G.timezone;
+    config["hostname"] = G.hostname;
+    config["scrollingText"] = G.scrollingText;
+    config["h6"] = G.h6;
+    config["h8"] = G.h8;
+    config["h12"] = G.h12;
+    config["h16"] = G.h16;
+    config["h18"] = G.h18;
+    config["h20"] = G.h20;
+    config["h22"] = G.h22;
+    config["h24"] = G.h24;
+    for (uint8_t i = 0;
+         i < sizeof(G.languageVariant) / sizeof(G.languageVariant[0]); i++) {
+        char string2Send[11];
+        sprintf(string2Send, "langVar%d", i);
+        config[string2Send] = static_cast<uint8_t>(G.languageVariant[i]);
+    }
+    for (uint8_t i = 0;
+         i < sizeof(G.layoutVariant) / sizeof(G.layoutVariant[0]); i++) {
+        char string2Send[11];
+        sprintf(string2Send, "layVar%d", i);
+        config[string2Send] = static_cast<uint8_t>(G.layoutVariant[i]);
+    }
+    config["effectBri"] = G.effectBri;
+    config["itIsVariant"] = static_cast<uint8_t>(G.itIsVariant);
+    config["secondVariant"] = static_cast<uint8_t>(G.secondVariant);
+    config["minuteVariant"] = static_cast<uint8_t>(G.minuteVariant);
+    config["supportedMinuteVariants"] =
+        usedClockType->supportedMinuteVariantMask();
+    config["cityid"] = G.openWeatherMap.cityid;
+    char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
+    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
+    config["apiKey"] = apiKeyMasked;
+    config["colortype"] = G.Colortype;
+    config["buildtype"] = static_cast<uint8_t>(G.buildTypeDef);
+    config["wType"] = static_cast<uint8_t>(G.wType);
+    config["clockTypeDef"] = G.clockTypeDef;
+    config["bitmapSymbol"] = static_cast<uint8_t>(G.bitmapSymbol);
+    config["bootLedBlink"] = G.bootLedBlink;
+    config["bootLedSweep"] = G.bootLedSweep;
+    config["bootShowWifi"] = G.bootShowWifi;
+    config["bootShowIP"] = G.bootShowIP;
+    config["ledPin"] = G.hardwarePins.led;
+    config["powerButtonPin"] = G.hardwarePins.powerButton;
+    config["modeButtonPin"] = G.hardwarePins.modeButton;
+    config["speedButtonPin"] = G.hardwarePins.speedButton;
+    config["i2cSdaPin"] = G.i2cSdaPin;
+    config["i2cSclPin"] = G.i2cSclPin;
+    config["autoBrightEnabled"] = G.autoBrightEnabled;
+    config["isRomanLanguage"] = usedClockType->isRomanLanguage();
+    config["hasDreiviertel"] = usedClockType->hasDreiviertel();
+    config["hasTwenty"] = usedClockType->hasTwenty();
+    config["hasWeatherLayout"] = usedClockType->hasWeatherLayout();
+    config["hasSecondsFrame"] = usedClockType->hasSecondsFrame();
+    config["supportsSecondsFrame"] = usedClockType->supportsSecondsFrame();
+    config["secondsFrameLedCount"] = G.secondsFrameLedCount;
+    config["hasMinuteInWords"] = usedClockType->hasMinuteInWords();
+    config["hasSpecialWordHappyBirthday"] =
+        usedClockType->hasSpecialWordHappyBirthday();
+    config["numOfRows"] = usedClockType->rowsWordMatrix();
+    config["fireCooling"] = G.fireCooling;
+    config["fireSparking"] = G.fireSparking;
+
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendBirthdays() {
+    DynamicJsonDocument config(256);
+    config["command"] = "birthdays";
+    config["hasSpecialWordHappyBirthday"] =
+        usedClockType->hasSpecialWordHappyBirthday();
+    for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
+        char dateString[10];
+        char string2Send[16];
+        snprintf(string2Send, sizeof(string2Send), "birthdayDate%d", i);
+        snprintf(dateString, sizeof(dateString), "%02u-%02u",
+                 G.birthday[i].month, G.birthday[i].day);
+        config[string2Send] = dateString;
+    }
+
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendColorValues() {
+    DynamicJsonDocument config(768);
+    fillColorValues(config);
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendAutoBrightValues() {
+    DynamicJsonDocument config(256);
+    config["command"] = "autoBright";
+    config["autoBrightEnabled"] = G.autoBrightEnabled;
+    config["autoBrightMin"] = G.autoBrightMin;
+    config["autoBrightMax"] = G.autoBrightMax;
+    config["autoBrightPeak"] = G.autoBrightPeak;
+    config["autoBrightSensor"] = (uint32_t)lux;
+    config["autoBrightGain"] = (uint8_t)ledGain;
+    config["autoBrightSource"] = autoBrightUsingBH1750 ? "BH1750" : "LDR";
+
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendTransitionValues() {
+    DynamicJsonDocument config(256);
+    fillTransitionValues(config);
+    sendJsonToClient(G.client_nr, config);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyHardwarePins() {
+    if (!hardwarePinsAreValid()) {
+        Serial.println("Invalid hardware pin configuration, restoring "
+                       "defaults");
+        setDefaultHardwarePins();
+        i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
+    }
+
+    Serial.printf("Hardware LED pin: GPIO%u\n", G.hardwarePins.led);
+    Serial.printf("Hardware power button pin: GPIO%u\n",
+                  G.hardwarePins.powerButton);
+    Serial.printf("Hardware mode button pin: GPIO%u\n",
+                  G.hardwarePins.modeButton);
+    Serial.printf("Hardware speed button pin: GPIO%u\n",
+                  G.hardwarePins.speedButton);
+    Serial.printf("I2C SDA pin: GPIO%u\n", G.i2cSdaPin);
+    Serial.printf("I2C SCL pin: GPIO%u\n", G.i2cSclPin);
+
+    eeprom::write();
+    i2cBus::begin(G.i2cSdaPin, G.i2cSclPin);
+    initHardwareButtons();
+    led.clear();
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyClockType() {
+    if (!isValidClockTypeDef(G.clockTypeDef)) {
+        Serial.printf("Ignoring invalid ClockType: %u\n", G.clockTypeDef);
+        return;
+    }
+
+    led.clear();
+    led.show();
+    delay(10);
+    Serial.printf("ClockType: %u\n", G.clockTypeDef);
+
+    usedClockType = getPointer(G.clockTypeDef);
+    normalizeMinuteVariant();
+
+    checkForValidLanguageVariant();
+    eeprom::write();
+
+    reallocateSecondsFrame();
+
+    renderPipeline.resize(usedClockType->rowsWordMatrix(),
+                          usedClockType->colsWordMatrix());
+
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applySecondsFrame() {
+    // led.clear() must run while G.secondsFrameLedCount still holds the
+    // OLD count, so a shrink clears the LEDs that are about to fall out
+    // of range - clearFrame() loops on the CURRENT count, and updating
+    // G.secondsFrameLedCount first would leave those LEDs stuck on.
+    led.clear();
+    led.show();
+    delay(10);
+
+    G.secondsFrameLedCount = G.param1;
+    eeprom::write();
+    Serial.printf("Seconds frame LED count: %u\n", G.secondsFrameLedCount);
+
+    reallocateSecondsFrame();
+
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::handleConfigCommand() {
     switch (G.conf) {
 
     case COMMAND_RESET: {
@@ -1575,151 +1768,34 @@ void ClockWork::loop(struct tm &tm) {
         break;
     }
 
-    case COMMAND_REQUEST_MQTT_VALUES: {
-        DynamicJsonDocument config(512);
-        config["command"] = "mqtt";
-        config["MQTT_State"] = G.mqtt.state;
-        config["MQTT_Port"] = G.mqtt.port;
-        config["MQTT_Server"] = G.mqtt.serverAdress;
-        config["MQTT_User"] = G.mqtt.user;
-
-        // don't expose password:
-        char passMasked[sizeof(G.mqtt.password) + 1] = {0};
-        sensitive::maskPreservingSuffix(passMasked, G.mqtt.password);
-        config["MQTT_Pass"] = passMasked;
-
-        config["MQTT_ClientId"] = G.mqtt.clientId;
-        config["MQTT_Topic"] = G.mqtt.topic;
-        config["MQTT_Status"] = mqtt.status();
-
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_MQTT_VALUES:
+        sendMqttValues();
         break;
-    }
 
-    case COMMAND_REQUEST_CONFIG_VALUES: {
-        DynamicJsonDocument config(1280);
-        config["command"] = "config";
-        config["ssid"] = network.getSSID();
-        config["timeserver"] = G.timeserver;
-        config["timezone"] = G.timezone;
-        config["hostname"] = G.hostname;
-        config["scrollingText"] = G.scrollingText;
-        config["h6"] = G.h6;
-        config["h8"] = G.h8;
-        config["h12"] = G.h12;
-        config["h16"] = G.h16;
-        config["h18"] = G.h18;
-        config["h20"] = G.h20;
-        config["h22"] = G.h22;
-        config["h24"] = G.h24;
-        for (uint8_t i = 0;
-             i < sizeof(G.languageVariant) / sizeof(G.languageVariant[0]);
-             i++) {
-            char string2Send[11];
-            sprintf(string2Send, "langVar%d", i);
-            config[string2Send] = static_cast<uint8_t>(G.languageVariant[i]);
-        }
-        for (uint8_t i = 0;
-             i < sizeof(G.layoutVariant) / sizeof(G.layoutVariant[0]); i++) {
-            char string2Send[11];
-            sprintf(string2Send, "layVar%d", i);
-            config[string2Send] = static_cast<uint8_t>(G.layoutVariant[i]);
-        }
-        config["effectBri"] = G.effectBri;
-        config["itIsVariant"] = static_cast<uint8_t>(G.itIsVariant);
-        config["secondVariant"] = static_cast<uint8_t>(G.secondVariant);
-        config["minuteVariant"] = static_cast<uint8_t>(G.minuteVariant);
-        config["supportedMinuteVariants"] =
-            usedClockType->supportedMinuteVariantMask();
-        config["cityid"] = G.openWeatherMap.cityid;
-        char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
-        sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
-        config["apiKey"] = apiKeyMasked;
-        config["colortype"] = G.Colortype;
-        config["buildtype"] = static_cast<uint8_t>(G.buildTypeDef);
-        config["wType"] = static_cast<uint8_t>(G.wType);
-        config["clockTypeDef"] = G.clockTypeDef;
-        config["bitmapSymbol"] = static_cast<uint8_t>(G.bitmapSymbol);
-        config["bootLedBlink"] = G.bootLedBlink;
-        config["bootLedSweep"] = G.bootLedSweep;
-        config["bootShowWifi"] = G.bootShowWifi;
-        config["bootShowIP"] = G.bootShowIP;
-        config["ledPin"] = G.hardwarePins.led;
-        config["powerButtonPin"] = G.hardwarePins.powerButton;
-        config["modeButtonPin"] = G.hardwarePins.modeButton;
-        config["speedButtonPin"] = G.hardwarePins.speedButton;
-        config["i2cSdaPin"] = G.i2cSdaPin;
-        config["i2cSclPin"] = G.i2cSclPin;
-        config["autoBrightEnabled"] = G.autoBrightEnabled;
-        config["isRomanLanguage"] = usedClockType->isRomanLanguage();
-        config["hasDreiviertel"] = usedClockType->hasDreiviertel();
-        config["hasTwenty"] = usedClockType->hasTwenty();
-        config["hasWeatherLayout"] = usedClockType->hasWeatherLayout();
-        config["hasSecondsFrame"] = usedClockType->hasSecondsFrame();
-        config["supportsSecondsFrame"] = usedClockType->supportsSecondsFrame();
-        config["secondsFrameLedCount"] = G.secondsFrameLedCount;
-        config["hasMinuteInWords"] = usedClockType->hasMinuteInWords();
-        config["hasSpecialWordHappyBirthday"] =
-            usedClockType->hasSpecialWordHappyBirthday();
-        config["numOfRows"] = usedClockType->rowsWordMatrix();
-        config["fireCooling"] = G.fireCooling;
-        config["fireSparking"] = G.fireSparking;
-
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_CONFIG_VALUES:
+        sendConfigValues();
         break;
-    }
 
-    case COMMAND_REQUEST_BIRTHDAYS: {
-        DynamicJsonDocument config(256);
-        config["command"] = "birthdays";
-        config["hasSpecialWordHappyBirthday"] =
-            usedClockType->hasSpecialWordHappyBirthday();
-        for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
-            char dateString[10];
-            char string2Send[16];
-            snprintf(string2Send, sizeof(string2Send), "birthdayDate%d", i);
-            snprintf(dateString, sizeof(dateString), "%02u-%02u",
-                     G.birthday[i].month, G.birthday[i].day);
-            config[string2Send] = dateString;
-        }
-
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_BIRTHDAYS:
+        sendBirthdays();
         break;
-    }
 
     case COMMAND_REQUEST_I2C_SCAN: {
         sendI2CScanResult(G.client_nr, i2cScanSdaPin, i2cScanSclPin);
         break;
     }
 
-    case COMMAND_REQUEST_COLOR_VALUES: {
-        DynamicJsonDocument config(768);
-        fillColorValues(config);
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_COLOR_VALUES:
+        sendColorValues();
         break;
-    }
 
-    case COMMAND_REQUEST_AUTO_BRIGHT: {
-        DynamicJsonDocument config(256);
-        config["command"] = "autoBright";
-        config["autoBrightEnabled"] = G.autoBrightEnabled;
-        config["autoBrightMin"] = G.autoBrightMin;
-        config["autoBrightMax"] = G.autoBrightMax;
-        config["autoBrightPeak"] = G.autoBrightPeak;
-        config["autoBrightSensor"] = (uint32_t)lux;
-        config["autoBrightGain"] = (uint8_t)ledGain;
-        config["autoBrightSource"] = autoBrightUsingBH1750 ? "BH1750" : "LDR";
-
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_AUTO_BRIGHT:
+        sendAutoBrightValues();
         break;
-    }
 
-    case COMMAND_REQUEST_TRANSITION: {
-        DynamicJsonDocument config(256);
-        fillTransitionValues(config);
-        sendJsonToClient(G.client_nr, config);
+    case COMMAND_REQUEST_TRANSITION:
+        sendTransitionValues();
         break;
-    }
 
     case COMMAND_SET_BIRTHDAYS:
     case COMMAND_SET_TIME:
@@ -1812,31 +1888,9 @@ void ClockWork::loop(struct tm &tm) {
         break;
     }
 
-    case COMMAND_SET_HARDWARE_PINS: {
-        if (!hardwarePinsAreValid()) {
-            Serial.println("Invalid hardware pin configuration, restoring "
-                           "defaults");
-            setDefaultHardwarePins();
-            i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
-        }
-
-        Serial.printf("Hardware LED pin: GPIO%u\n", G.hardwarePins.led);
-        Serial.printf("Hardware power button pin: GPIO%u\n",
-                      G.hardwarePins.powerButton);
-        Serial.printf("Hardware mode button pin: GPIO%u\n",
-                      G.hardwarePins.modeButton);
-        Serial.printf("Hardware speed button pin: GPIO%u\n",
-                      G.hardwarePins.speedButton);
-        Serial.printf("I2C SDA pin: GPIO%u\n", G.i2cSdaPin);
-        Serial.printf("I2C SCL pin: GPIO%u\n", G.i2cSclPin);
-
-        eeprom::write();
-        i2cBus::begin(G.i2cSdaPin, G.i2cSclPin);
-        initHardwareButtons();
-        led.clear();
-        parametersChanged = true;
+    case COMMAND_SET_HARDWARE_PINS:
+        applyHardwarePins();
         break;
-    }
 
     case COMMAND_SET_COLORTYPE: {
         // G.param1 sets new Colortype
@@ -1850,50 +1904,13 @@ void ClockWork::loop(struct tm &tm) {
         break;
     }
 
-    case COMMAND_SET_CLOCK_TYPE: {
-        if (!isValidClockTypeDef(G.clockTypeDef)) {
-            Serial.printf("Ignoring invalid ClockType: %u\n", G.clockTypeDef);
-            break;
-        }
-
-        led.clear();
-        led.show();
-        delay(10);
-        Serial.printf("ClockType: %u\n", G.clockTypeDef);
-
-        usedClockType = getPointer(G.clockTypeDef);
-        normalizeMinuteVariant();
-
-        checkForValidLanguageVariant();
-        eeprom::write();
-
-        reallocateSecondsFrame();
-
-        renderPipeline.resize(usedClockType->rowsWordMatrix(),
-                              usedClockType->colsWordMatrix());
-
-        parametersChanged = true;
+    case COMMAND_SET_CLOCK_TYPE:
+        applyClockType();
         break;
-    }
 
-    case COMMAND_SET_SECONDS_FRAME: {
-        // led.clear() must run while G.secondsFrameLedCount still holds the
-        // OLD count, so a shrink clears the LEDs that are about to fall out
-        // of range - clearFrame() loops on the CURRENT count, and updating
-        // G.secondsFrameLedCount first would leave those LEDs stuck on.
-        led.clear();
-        led.show();
-        delay(10);
-
-        G.secondsFrameLedCount = G.param1;
-        eeprom::write();
-        Serial.printf("Seconds frame LED count: %u\n", G.secondsFrameLedCount);
-
-        reallocateSecondsFrame();
-
-        parametersChanged = true;
+    case COMMAND_SET_SECONDS_FRAME:
+        applySecondsFrame();
         break;
-    }
 
     case COMMAND_SET_FIRE: {
         if (G.param1) {
@@ -1937,6 +1954,202 @@ void ClockWork::loop(struct tm &tm) {
     default:
         break;
     }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::showSecondsMode() {
+    // 0xFF marks "nothing drawn yet" and cannot collide with a second.
+    static uint8_t lastShownSecond = 0xFF;
+
+    if (G.progInit) {
+        clearClockByProgInit();
+        lastShownSecond = 0xFF;
+    }
+
+    // This runs on every loop() iteration. Without this guard the LED
+    // strip is rewritten thousands of times per second, which starves the
+    // network stack -- the display only ever changes once per second.
+    if (lastShownSecond == _second && !parametersChanged) {
+        return;
+    }
+    lastShownSecond = _second;
+    parametersChanged = false;
+
+    led.showNumbers('0' + _second / 10, '0' + _second % 10);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::showDigitalClockMode() {
+    static uint8_t lastShownSecond = 0xFF;
+
+    if (G.progInit) {
+        clearClockByProgInit();
+        lastShownSecond = 0xFF;
+    }
+
+    if (lastShownSecond == _second && !parametersChanged) {
+        return;
+    }
+    lastShownSecond = _second;
+    parametersChanged = false;
+
+    led.clear();
+    led.showDigitalClock(_minute % 10, _minute / 10, _hour % 10, _hour / 10);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::runEffectMode() {
+    const uint16_t effectInterval = effectSpeedIntervalMillis(G.effectSpeed);
+    if (G.progInit) {
+        countMillisSpeed = effectInterval;
+        clearClockByProgInit();
+    }
+
+    if (countMillisSpeed < effectInterval) {
+        return;
+    }
+
+    switch (G.prog) {
+    case COMMAND_MODE_SCROLLINGTEXT:
+        scrollingText(G.scrollingText);
+        break;
+    case COMMAND_MODE_RAINBOWCYCLE:
+        rainbowCycle();
+        break;
+    case COMMAND_MODE_RAINBOW:
+        rainbow();
+        break;
+    case COMMAND_MODE_FIRE:
+        fire();
+        break;
+    case COMMAND_MODE_SYMBOL:
+        displaySymbols(G.bitmapSymbol);
+        break;
+    default:
+        break;
+    }
+    countMillisSpeed = 0;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::showColorMode() {
+    if (G.progInit) {
+        clearClockByProgInit();
+        for (uint8_t row = 0; row < usedClockType->rowsWordMatrix(); row++) {
+            frontMatrix[row] = num32BitWithOnesAccordingToColumns();
+        }
+    }
+
+    if (parametersChanged) {
+        led.setbyFrontMatrix(Foreground, false);
+        led.show();
+        parametersChanged = false;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::persistTransitionMode() {
+    if (G.progInit) {
+        G.progInit = false;
+        eeprom::write();
+        delay(100);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::showWordClockMode() {
+    clearClockByProgInit();
+    calcClockface();
+
+    switch (changesInClockface()) {
+    case WordclockChanges::Minute:
+        lastMinuteArray = minuteArray;
+        memcpy(&lastFrontMatrix, &frontMatrix, sizeof lastFrontMatrix);
+        led.set(WordclockChanges::Minute);
+        break;
+    case WordclockChanges::Words:
+        lastMinuteArray = minuteArray;
+        memcpy(&lastFrontMatrix, &frontMatrix, sizeof lastFrontMatrix);
+        led.set(WordclockChanges::Words);
+        break;
+    case WordclockChanges::Parameters:
+        led.set(WordclockChanges::Parameters);
+        break;
+    default:
+        break;
+    }
+    G.prog = COMMAND_IDLE;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::runActiveMode() {
+    switch (G.prog) {
+    case COMMAND_MODE_SECONDS:
+        showSecondsMode();
+        break;
+
+    case COMMAND_MODE_DIGITAL_CLOCK:
+        showDigitalClockMode();
+        break;
+
+    case COMMAND_MODE_SCROLLINGTEXT:
+    case COMMAND_MODE_RAINBOWCYCLE:
+    case COMMAND_MODE_RAINBOW:
+    case COMMAND_MODE_FIRE:
+    case COMMAND_MODE_SYMBOL:
+        runEffectMode();
+        break;
+
+    case COMMAND_MODE_COLOR:
+        showColorMode();
+        break;
+
+    case COMMAND_MODE_TRANSITION:
+        persistTransitionMode();
+        showWordClockMode();
+        break;
+
+    case COMMAND_MODE_WORD_CLOCK:
+        showWordClockMode();
+        break;
+
+    default:
+        break;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::loop(struct tm &tm) {
+    unsigned long currentMillis = millis();
+    countMillisSpeed += currentMillis - previousMillis;
+    previousMillis = currentMillis;
+    loopHardwareButtons();
+
+    // Faster runtime for demo
+    renderPipeline.demoMode(_hour, _minute, _second);
+
+    if (lastSecond != _second) {
+        loopEverySecond(tm);
+        lastSecond = _second;
+    }
+
+    if (lastMinute != _minute) {
+        lastMinute = _minute;
+        loopEveryMinute();
+    }
+
+    const bool setCommandPending =
+        G.conf != COMMAND_IDLE && G.conf < PLACEHOLDER_MAX_SET;
+
+    handleConfigCommand();
 
     if (setCommandPending) {
         initLedStrip(G.Colortype);
@@ -1946,145 +2159,7 @@ void ClockWork::loop(struct tm &tm) {
 
     broadcastWebState();
 
-    switch (G.prog) {
-
-    case COMMAND_MODE_SECONDS: {
-        // 0xFF marks "nothing drawn yet" and cannot collide with a second.
-        static uint8_t lastShownSecond = 0xFF;
-
-        if (G.progInit) {
-            clearClockByProgInit();
-            lastShownSecond = 0xFF;
-        }
-
-        // This runs on every loop() iteration. Without this guard the LED
-        // strip is rewritten thousands of times per second, which starves the
-        // network stack -- the display only ever changes once per second.
-        if (lastShownSecond == _second && !parametersChanged) {
-            break;
-        }
-        lastShownSecond = _second;
-        parametersChanged = false;
-
-        led.showNumbers('0' + _second / 10, '0' + _second % 10);
-        break;
-    }
-
-    case COMMAND_MODE_DIGITAL_CLOCK: {
-        static uint8_t lastShownSecond = 0xFF;
-
-        if (G.progInit) {
-            clearClockByProgInit();
-            lastShownSecond = 0xFF;
-        }
-
-        if (lastShownSecond == _second && !parametersChanged) {
-            break;
-        }
-        lastShownSecond = _second;
-        parametersChanged = false;
-
-        led.clear();
-        led.showDigitalClock(_minute % 10, _minute / 10, _hour % 10,
-                             _hour / 10);
-        break;
-    }
-
-    case COMMAND_MODE_SCROLLINGTEXT:
-    case COMMAND_MODE_RAINBOWCYCLE:
-    case COMMAND_MODE_RAINBOW:
-    case COMMAND_MODE_FIRE:
-    case COMMAND_MODE_SYMBOL: {
-        const uint16_t effectInterval =
-            effectSpeedIntervalMillis(G.effectSpeed);
-        if (G.progInit) {
-            countMillisSpeed = effectInterval;
-            clearClockByProgInit();
-        }
-
-        if (countMillisSpeed >= effectInterval) {
-            switch (G.prog) {
-            case COMMAND_MODE_SCROLLINGTEXT: {
-                scrollingText(G.scrollingText);
-                break;
-            }
-            case COMMAND_MODE_RAINBOWCYCLE: {
-                rainbowCycle();
-                break;
-            }
-            case COMMAND_MODE_RAINBOW: {
-                rainbow();
-                break;
-            }
-            case COMMAND_MODE_FIRE: {
-                fire();
-                break;
-            }
-            case COMMAND_MODE_SYMBOL: {
-                displaySymbols(G.bitmapSymbol);
-                break;
-            }
-            default:
-                break;
-            }
-            countMillisSpeed = 0;
-        }
-        break;
-    }
-
-    case COMMAND_MODE_COLOR: {
-        if (G.progInit) {
-            clearClockByProgInit();
-            for (uint8_t row = 0; row < usedClockType->rowsWordMatrix();
-                 row++) {
-                frontMatrix[row] = num32BitWithOnesAccordingToColumns();
-            }
-        }
-
-        if (parametersChanged) {
-            led.setbyFrontMatrix(Foreground, false);
-            led.show();
-            parametersChanged = false;
-        }
-        break;
-    }
-
-    case COMMAND_MODE_TRANSITION: {
-        if (G.progInit) {
-            G.progInit = false;
-            eeprom::write();
-            delay(100);
-        }
-        // There is no break here on purpose, directly after the call
-        // COMMAND_MODE_TRANSITION, COMMAND_MODE_WORD_CLOCK must be called
-    }
-
-    case COMMAND_MODE_WORD_CLOCK: {
-        clearClockByProgInit();
-        calcClockface();
-
-        switch (changesInClockface()) {
-        case WordclockChanges::Minute:
-            lastMinuteArray = minuteArray;
-            memcpy(&lastFrontMatrix, &frontMatrix, sizeof lastFrontMatrix);
-            led.set(WordclockChanges::Minute);
-            break;
-        case WordclockChanges::Words:
-            lastMinuteArray = minuteArray;
-            memcpy(&lastFrontMatrix, &frontMatrix, sizeof lastFrontMatrix);
-            led.set(WordclockChanges::Words);
-            break;
-        case WordclockChanges::Parameters:
-            led.set(WordclockChanges::Parameters);
-            break;
-        default:
-            break;
-        }
-        G.prog = COMMAND_IDLE;
-    }
-    default:
-        break;
-    }
+    runActiveMode();
 
     if (countMillisSpeed > 10000) {
         countMillisSpeed = 0;

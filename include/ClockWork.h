@@ -81,6 +81,25 @@ private:
     bool DetermineIfItIsIsShown(const uint8_t min);
     void DetermineWhichItIsToShow(uint8_t offsetHour, uint8_t min);
     void clearClockByProgInit();
+    void loopEverySecond(struct tm &tm);
+    void loopEveryMinute();
+    void handleConfigCommand();
+    void sendMqttValues();
+    void sendConfigValues();
+    void sendBirthdays();
+    void sendColorValues();
+    void sendAutoBrightValues();
+    void sendTransitionValues();
+    void applyHardwarePins();
+    void applyClockType();
+    void applySecondsFrame();
+    void runActiveMode();
+    void showSecondsMode();
+    void showDigitalClockMode();
+    void runEffectMode();
+    void showColorMode();
+    void persistTransitionMode();
+    void showWordClockMode();
 
 public:
     ~ClockWork() = default;
