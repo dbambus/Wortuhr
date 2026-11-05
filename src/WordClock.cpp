@@ -492,13 +492,10 @@ void ensureWeatherData() {
 }
 
 //------------------------------------------------------------------------------
-// Start setup()
+// Setup Functions
 //------------------------------------------------------------------------------
 
-void setup() {
-    //-------------------------------------
-    // Start serial interface if required
-    //-------------------------------------
+void startSerial() {
 #if GENERAL_VERBOSE
     Serial.begin(115200);
     Serial.println("");
@@ -506,10 +503,11 @@ void setup() {
     Serial.println("Begin Setup");
     Serial.println("--------------------------------------");
 #endif
-    //-------------------------------------
-    // Read / initialize EEPROM
-    //-------------------------------------
+}
 
+//------------------------------------------------------------------------------
+
+void loadSettingsFromEeprom() {
     EEPROM.begin(EEPROM_SIZE);
     eeprom::read();
     ensureHardwarePins();
@@ -525,10 +523,11 @@ void setup() {
     ensureBuildType();
     ensureWhiteType();
     ensureMinuteLedCount();
+}
 
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
-    applyTimezone();
+void setupConfigPortal() {
     network.setPortalHandlers(
         [](time_t utc) {
             struct timeval tv;
@@ -540,7 +539,11 @@ void setup() {
             }
         },
         portalSettings::render, portalSettings::apply);
+}
 
+//------------------------------------------------------------------------------
+
+void handlePowerCycleCount() {
     // Read the power cycle count from EEPROM
     powerCycleCount = EEPROM.read(POWER_CYCLE_COUNT_ADDRESS);
     incrementPowerCycleCount();
@@ -553,157 +556,176 @@ void setup() {
         G.sernr++;
         Serial.println("Reset to initial values");
     }
+}
 
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
-    if (G.sernr != SERNR) {
-        for (uint16_t i = 0; i < EEPROM_SIZE; i++) {
-            EEPROM.write(i, i);
-        }
-        EEPROM.commit();
+void resetPowerCycleCount() {
+    powerCycleCount = 0;
+    EEPROM.write(POWER_CYCLE_COUNT_ADDRESS, powerCycleCount);
+    EEPROM.commit();
+}
 
-        G.sernr = SERNR;
-        G.prog = COMMAND_MODE_WORD_CLOCK;
-        G.param1 = 0;
-        G.progInit = true;
-        G.conf = COMMAND_IDLE;
-        for (uint8_t i = 0; i < ColorPositionCount; i++) {
-            G.color[i] = {0, 0, 0};
-        }
-        G.color[Foreground] = HsbColor(DEFAULT_HUE / 360.f, 1.f, 0.5f);
-        // Second gradient colour: a third of the colour circle further on, so
-        // the default gradient is visible without configuring anything.
-        G.color[GradientEnd] =
-            HsbColor(fmodf(DEFAULT_HUE / 360.f + 0.33f, 1.f), 1.f, 0.5f);
-        G.effectBri = 2;
-        G.effectSpeed = EFFECT_SPEED_DEFAULT;
-        G.fireCooling = FIRE_COOLING_DEFAULT;
-        G.fireSparking = FIRE_SPARKING_DEFAULT;
-        G.client_nr = 0;
-        G.secondVariant = SecondVariant::Off;
-        G.secondsFrameLedCount = 0;
-        G.bitmapSymbol = BitmapSymbol::HEART;
-        G.minuteVariant = defaultMinuteVariant();
-        G.minuteLedCount =
-            minuteLedCountFor(G.minuteVariant, MINUTE_LEDS_WIRED_4);
-        strcpy(G.openWeatherMap.cityid, "");
-        strcpy(G.openWeatherMap.apikey, "");
-        strcpy(G.timeserver, "europe.pool.ntp.org");
-        strlcpy(G.timezone, TZ_Europe_Berlin, sizeof(G.timezone));
-        strcpy(G.hostname, "ESPWordclock");
-        strcpy(G.scrollingText, "HELLO WORLD ");
+//------------------------------------------------------------------------------
 
-        G.h6 = DEFAULT_BRIGHTNESS;
-        G.h8 = DEFAULT_BRIGHTNESS;
-        G.h12 = DEFAULT_BRIGHTNESS;
-        G.h16 = DEFAULT_BRIGHTNESS;
-        G.h18 = DEFAULT_BRIGHTNESS;
-        G.h20 = DEFAULT_BRIGHTNESS;
-        G.h22 = DEFAULT_BRIGHTNESS;
-        G.h24 = DEFAULT_BRIGHTNESS;
-        G.layoutVariant[ReverseMinDirection] = REVERSE_MINUTE_DIR;
-        G.layoutVariant[MirrorVertical] = MIRROR_FRONT_VERTICAL;
-        G.layoutVariant[MirrorHorizontal] = MIRROR_FRONT_HORIZONTAL;
-        G.layoutVariant[FlipHorzVert] = FLIP_HORIZONTAL_VERTICAL;
-        G.layoutVariant[ExtraLedPerRow] = EXTRA_LED_PER_ROW;
-        G.layoutVariant[MeanderRows] = MEANDER_ROWS;
-        G.languageVariant[EN_ShowAQuarter] = false;
-
-        G.itIsVariant = defaultItIsVariant();
-
+void setDefaultMqttSettings() {
 #ifdef MQTT_SERVER
-        strlcpy(G.mqtt.serverAdress, MQTT_SERVER, sizeof(G.mqtt.serverAdress));
-        G.mqtt.state = true;
+    strlcpy(G.mqtt.serverAdress, MQTT_SERVER, sizeof(G.mqtt.serverAdress));
+    G.mqtt.state = true;
 #else
-        strcpy(G.mqtt.serverAdress, "192.168.4.1");
-        G.mqtt.state = false;
+    strcpy(G.mqtt.serverAdress, "192.168.4.1");
+    G.mqtt.state = false;
 #endif
 
 #ifdef MQTT_PORT
-        G.mqtt.port = MQTT_PORT;
+    G.mqtt.port = MQTT_PORT;
 #else
-        G.mqtt.port = 1883;
+    G.mqtt.port = 1883;
 #endif
 
 #ifdef MQTT_USER
-        strlcpy(G.mqtt.user, MQTT_USER, sizeof(G.mqtt.user));
+    strlcpy(G.mqtt.user, MQTT_USER, sizeof(G.mqtt.user));
 #else
-        strcpy(G.mqtt.user, "User");
+    strcpy(G.mqtt.user, "User");
 #endif
 
 #ifdef MQTT_PASSWORD
-        strlcpy(G.mqtt.password, MQTT_PASSWORD, sizeof(G.mqtt.password));
+    strlcpy(G.mqtt.password, MQTT_PASSWORD, sizeof(G.mqtt.password));
 #else
-        strcpy(G.mqtt.password, "Password");
+    strcpy(G.mqtt.password, "Password");
 #endif
 
 #ifdef MQTT_CLIENT_ID
-        strlcpy(G.mqtt.clientId, MQTT_CLIENT_ID, sizeof(G.mqtt.clientId));
+    strlcpy(G.mqtt.clientId, MQTT_CLIENT_ID, sizeof(G.mqtt.clientId));
 #else
-        strcpy(G.mqtt.clientId, "ClientId");
+    strcpy(G.mqtt.clientId, "ClientId");
 #endif
 
 #ifdef MQTT_TOPIC
-        strlcpy(G.mqtt.topic, MQTT_TOPIC, sizeof(G.mqtt.topic));
+    strlcpy(G.mqtt.topic, MQTT_TOPIC, sizeof(G.mqtt.topic));
 #else
-        strcpy(G.mqtt.topic, "ESPWordclock");
+    strcpy(G.mqtt.topic, "ESPWordclock");
 #endif
+}
 
-        G.clockTypeDef = DEFAULT_LAYOUT;
-        usedClockType = clockWork.getPointer(G.clockTypeDef);
-        clockWork.checkForValidLanguageVariant();
-        G.buildTypeDef = DEFAULT_BUILDTYPE;
-        G.Colortype = DEFAULT_LEDTYPE;
-        G.wType = WHITE_LEDTYPE;
+//------------------------------------------------------------------------------
 
-        G.bootLedBlink = false;
-        G.bootLedSweep = BOOT_LEDSWEEP;
-        G.bootShowWifi = true;
-        G.bootShowIP = BOOT_SHOWIP;
-
-        G.autoBrightEnabled = 0;
-        G.autoBrightMin = 10;
-        G.autoBrightMax = 80;
-        G.autoBrightPeak = 750;
-        G.transitionType = 0; // Transition::NO_TRANSITION;
-        G.transitionDuration = 2;
-        G.colorize = 0;
-        G.transitionDemo = false;
-
-        for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
-            G.birthday[i].day = 0;
-            G.birthday[i].month = 0;
-        }
-        setDefaultHardwarePins();
-        i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
-
-        eeprom::write();
-        Serial.println("EEPROM written");
+void restoreFactoryDefaults() {
+    for (uint16_t i = 0; i < EEPROM_SIZE; i++) {
+        EEPROM.write(i, i);
     }
+    EEPROM.commit();
 
-    ensureWeatherData();
-
-    // Initialization of COMMAND_MODE_xxx (color)
+    G.sernr = SERNR;
+    G.prog = COMMAND_MODE_WORD_CLOCK;
+    G.param1 = 0;
     G.progInit = true;
+    G.conf = COMMAND_IDLE;
+    for (uint8_t i = 0; i < ColorPositionCount; i++) {
+        G.color[i] = {0, 0, 0};
+    }
+    G.color[Foreground] = HsbColor(DEFAULT_HUE / 360.f, 1.f, 0.5f);
+    // Second gradient colour: a third of the colour circle further on, so
+    // the default gradient is visible without configuring anything.
+    G.color[GradientEnd] =
+        HsbColor(fmodf(DEFAULT_HUE / 360.f + 0.33f, 1.f), 1.f, 0.5f);
+    G.effectBri = 2;
+    G.effectSpeed = EFFECT_SPEED_DEFAULT;
+    G.fireCooling = FIRE_COOLING_DEFAULT;
+    G.fireSparking = FIRE_SPARKING_DEFAULT;
+    G.client_nr = 0;
+    G.secondVariant = SecondVariant::Off;
+    G.secondsFrameLedCount = 0;
+    G.bitmapSymbol = BitmapSymbol::HEART;
+    G.minuteVariant = defaultMinuteVariant();
+    G.minuteLedCount = minuteLedCountFor(G.minuteVariant, MINUTE_LEDS_WIRED_4);
+    strcpy(G.openWeatherMap.cityid, "");
+    strcpy(G.openWeatherMap.apikey, "");
+    strcpy(G.timeserver, "europe.pool.ntp.org");
+    strlcpy(G.timezone, TZ_Europe_Berlin, sizeof(G.timezone));
+    strcpy(G.hostname, "ESPWordclock");
+    strcpy(G.scrollingText, "HELLO WORLD ");
 
-    //-------------------------------------
-    // Get Pointer for ClockType
-    //-------------------------------------
+    G.h6 = DEFAULT_BRIGHTNESS;
+    G.h8 = DEFAULT_BRIGHTNESS;
+    G.h12 = DEFAULT_BRIGHTNESS;
+    G.h16 = DEFAULT_BRIGHTNESS;
+    G.h18 = DEFAULT_BRIGHTNESS;
+    G.h20 = DEFAULT_BRIGHTNESS;
+    G.h22 = DEFAULT_BRIGHTNESS;
+    G.h24 = DEFAULT_BRIGHTNESS;
+    G.layoutVariant[ReverseMinDirection] = REVERSE_MINUTE_DIR;
+    G.layoutVariant[MirrorVertical] = MIRROR_FRONT_VERTICAL;
+    G.layoutVariant[MirrorHorizontal] = MIRROR_FRONT_HORIZONTAL;
+    G.layoutVariant[FlipHorzVert] = FLIP_HORIZONTAL_VERTICAL;
+    G.layoutVariant[ExtraLedPerRow] = EXTRA_LED_PER_ROW;
+    G.layoutVariant[MeanderRows] = MEANDER_ROWS;
+    G.languageVariant[EN_ShowAQuarter] = false;
 
-    if (!isValidModeCommand(G.prog)) {
-        Serial.printf("Invalid Programm %u in EEPROM, using word clock\n",
-                      G.prog);
-        G.prog = COMMAND_MODE_WORD_CLOCK;
-        eeprom::write();
+    G.itIsVariant = defaultItIsVariant();
+
+    setDefaultMqttSettings();
+
+    G.clockTypeDef = DEFAULT_LAYOUT;
+    usedClockType = clockWork.getPointer(G.clockTypeDef);
+    clockWork.checkForValidLanguageVariant();
+    G.buildTypeDef = DEFAULT_BUILDTYPE;
+    G.Colortype = DEFAULT_LEDTYPE;
+    G.wType = WHITE_LEDTYPE;
+
+    G.bootLedBlink = false;
+    G.bootLedSweep = BOOT_LEDSWEEP;
+    G.bootShowWifi = true;
+    G.bootShowIP = BOOT_SHOWIP;
+
+    G.autoBrightEnabled = 0;
+    G.autoBrightMin = 10;
+    G.autoBrightMax = 80;
+    G.autoBrightPeak = 750;
+    G.transitionType = 0; // Transition::NO_TRANSITION;
+    G.transitionDuration = 2;
+    G.colorize = 0;
+    G.transitionDemo = false;
+
+    for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
+        G.birthday[i].day = 0;
+        G.birthday[i].month = 0;
+    }
+    setDefaultHardwarePins();
+    i2cBus::setDefaultPins(G.i2cSdaPin, G.i2cSclPin);
+
+    eeprom::write();
+    Serial.println("EEPROM written");
+}
+
+//------------------------------------------------------------------------------
+
+void ensureProgram() {
+    if (isValidModeCommand(G.prog)) {
+        return;
     }
 
-    if (!isValidClockTypeDef(G.clockTypeDef)) {
-        Serial.printf("Invalid ClockType %u in EEPROM, using default %u\n",
-                      G.clockTypeDef, DEFAULT_LAYOUT);
-        G.clockTypeDef = DEFAULT_LAYOUT;
-        eeprom::write();
+    Serial.printf("Invalid Programm %u in EEPROM, using word clock\n", G.prog);
+    G.prog = COMMAND_MODE_WORD_CLOCK;
+    eeprom::write();
+}
+
+//------------------------------------------------------------------------------
+
+void ensureClockType() {
+    if (isValidClockTypeDef(G.clockTypeDef)) {
+        return;
     }
 
+    Serial.printf("Invalid ClockType %u in EEPROM, using default %u\n",
+                  G.clockTypeDef, DEFAULT_LAYOUT);
+    G.clockTypeDef = DEFAULT_LAYOUT;
+    eeprom::write();
+}
+
+//------------------------------------------------------------------------------
+
+void initClockType() {
     usedClockType = clockWork.getPointer(G.clockTypeDef);
     clockWork.normalizeMinuteVariant();
 
@@ -721,13 +743,11 @@ void setup() {
     } else {
         secondsFrame = nullptr;
     }
+}
 
-    //-------------------------------------
-    // Initialize LEDs
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
-    clockWork.initHardwareButtons();
-
+void initLeds() {
     Serial.println("LED Init");
     clockWork.initLedStrip(G.Colortype);
     if (G.bootLedBlink) {
@@ -738,19 +758,11 @@ void setup() {
         clockWork.initBootLedSweep(20);
     }
     clockWork.initBootLed();
+}
 
-    G.conf = COMMAND_IDLE;
+//------------------------------------------------------------------------------
 
-    //-------------------------------------
-    // Initialize I2C
-    //-------------------------------------
-
-    i2cBus::begin(G.i2cSdaPin, G.i2cSclPin);
-
-    //-------------------------------------
-    // Start external real-time clock
-    //-------------------------------------
-
+void initRealTimeClock() {
     if (i2cBus::pinsAreEnabled(G.i2cSdaPin, G.i2cSclPin) && RTC.begin()) {
         Serial.println("External real-time clock found");
         struct timeval tv;
@@ -767,11 +779,11 @@ void setup() {
 #elif defined(ESP32)
     sntp_set_time_sync_notification_cb(time_is_set);
 #endif
+}
 
-    //-------------------------------------
-    // Start WiFi
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
+void startWifi() {
     if (G.bootShowWifi) {
         led.setBitmapSymbol(WLAN100, HsbColor(0.66f, 1.0f, 0.2f));
     }
@@ -783,13 +795,11 @@ void setup() {
     wifiStart();
     ensureTimezone();
     configTzTime(G.timezone, G.timeserver);
+}
 
-    delay(50);
+//------------------------------------------------------------------------------
 
-    //-------------------------------------
-    // OTA
-    //-------------------------------------
-
+void startUpdateServer() {
 #if WEB_PROTECTED
     httpUpdater.setup(&httpServer, WEB_USER, WEB_PASSWORD);
 #else
@@ -802,19 +812,11 @@ void setup() {
         httpServer.send(308, "text/plain", "");
     });
     httpServer.begin();
+}
 
-    //-------------------------------------
-    // MQTT
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
-    if (G.mqtt.state) {
-        mqtt.init();
-    }
-
-    //-------------------------------------
-    // Start Websocket
-    //-------------------------------------
-
+void startWebSocket() {
 #if WEB_PROTECTED
     webSocket.setAuthorization(WEB_USER, WEB_PASSWORD);
 #endif
@@ -822,15 +824,19 @@ void setup() {
     webSocket.onEvent(webSocketEvent);
 
     Serial.println("Websocket started");
+}
 
-    //-------------------------------------
-    // mDNS
-    //-------------------------------------
+//------------------------------------------------------------------------------
+
+void startMdns() {
     MDNS.begin(G.hostname);
     MDNS.addService("http", "tcp", 80);
     MDNS.addService("ota", "tcp", 81);
+}
 
-    //-------------------------------------
+//------------------------------------------------------------------------------
+
+void printSystemInfo() {
     Serial.println("--------------------------------------");
     Serial.println("ESP Wordclock");
     Serial.printf("Version         : %s\n", VERSION);
@@ -855,11 +861,11 @@ void setup() {
     Serial.print(__DATE__);
     Serial.print(" ");
     Serial.println(__TIME__);
+}
 
-    //-------------------------------------
-    // Auto brightness
-    //-------------------------------------
+//------------------------------------------------------------------------------
 
+void initAutoBrightness() {
 #if defined(ESP32)
     analogReadResolution(10);
 #endif
@@ -877,32 +883,68 @@ void setup() {
         bh1750Initialized = false;
         autoBrightUsingBH1750 = false;
     }
+}
 
-    //-------------------------------------
+//------------------------------------------------------------------------------
+// Start setup()
+//------------------------------------------------------------------------------
+
+void setup() {
+    startSerial();
+    loadSettingsFromEeprom();
+
+    applyTimezone();
+    setupConfigPortal();
+    handlePowerCycleCount();
+
+    if (G.sernr != SERNR) {
+        restoreFactoryDefaults();
+    }
+
+    ensureWeatherData();
+
+    // Initialization of COMMAND_MODE_xxx (color)
+    G.progInit = true;
+
+    ensureProgram();
+    ensureClockType();
+    initClockType();
+
+    clockWork.initHardwareButtons();
+    initLeds();
+
+    G.conf = COMMAND_IDLE;
+
+    i2cBus::begin(G.i2cSdaPin, G.i2cSclPin);
+    initRealTimeClock();
+
+    startWifi();
+    delay(50);
+
+    startUpdateServer();
+
+    if (G.mqtt.state) {
+        mqtt.init();
+    }
+
+    startWebSocket();
+    startMdns();
+
+    printSystemInfo();
+    initAutoBrightness();
 
     Serial.println("--------------------------------------");
     Serial.println("End Setup");
     Serial.println("--------------------------------------");
     Serial.println("");
 
-    //-------------------------------------
-    // Reset Powercycle Counter
-    //-------------------------------------
     delay(500);
-    powerCycleCount = 0;
-    EEPROM.write(POWER_CYCLE_COUNT_ADDRESS, powerCycleCount);
-    EEPROM.commit();
+    resetPowerCycleCount();
 
-    //-------------------------------------
-    // Frame Init
-    //-------------------------------------
     if (secondsFrame) {
         secondsFrame->initFrame();
     }
 
-    //-------------------------------------
-    // Setup Done
-    //-------------------------------------
     parametersChanged = true;
 }
 
