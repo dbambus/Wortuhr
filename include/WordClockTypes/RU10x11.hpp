@@ -37,7 +37,7 @@ public:
 
     //------------------------------------------------------------------------------
 
-    virtual FrontWord itIsWord(uint8_t hour, uint8_t minute) override {
+    virtual FrontWord itIsWord(uint8_t hour, uint8_t) override {
         switch (hour) {
         case 1:
             return FrontWord::es_ist__singular__;

@@ -189,9 +189,7 @@ public:
 
     virtual bool alwaysNamesCurrentHour() { return false; }
 
-    virtual FrontWord itIsWord(uint8_t hour, uint8_t minute) {
-        return FrontWord::es_ist;
-    }
+    virtual FrontWord itIsWord(uint8_t, uint8_t) { return FrontWord::es_ist; }
 
     // --- Layout & Mode Capabilities ---
 

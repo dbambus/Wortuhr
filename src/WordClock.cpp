@@ -19,6 +19,7 @@
 #include "Config.h"
 
 #include "WordClock.h"
+#include <BH1750.h>
 #include <NeoPixelBus.h>
 #include <RTClib.h>
 #include <WiFiClient.h>
@@ -26,8 +27,9 @@
 
 #include "WordClockState.h"
 
-#include "ClockType.gen.h"
+#include "ClockTypeRegistry.h"
 #include "WebPageAdapter.h"
+#include "WordClockTypes/ClockType.hpp"
 
 #include "EEPROMAnything.h"
 
@@ -53,6 +55,7 @@ HTTPUpdateServer httpUpdater;
 const char TZ_Europe_Berlin[] = "CET-1CEST,M3.5.0,M10.5.0/3";
 
 RTC_Type RTC;
+extern BH1750 lightMeter;
 
 #include "ClockWork.h"
 #include "Frame.h"
@@ -73,8 +76,6 @@ ClockWork clockWork;
 Mqtt mqtt(clockWork);
 Network network;
 
-void setDefaultHardwarePins();
-bool hardwarePinsAreValid();
 void ensureI2CPins();
 void ensureTimezone();
 void ensureTransitionType();
@@ -92,7 +93,6 @@ void deleteActiveLedStrip() {
     activeLedStrip = nullptr;
 }
 
-#include "ClockWork.hpp"
 #include "Render/ColorStage.hpp"
 #include "Symbols.h"
 #include "Transitions/Transition.hpp"
@@ -667,7 +667,7 @@ void restoreFactoryDefaults() {
     setDefaultMqttSettings();
 
     G.clockTypeDef = DEFAULT_LAYOUT;
-    usedClockType = clockWork.getPointer(G.clockTypeDef);
+    usedClockType = clockTypeFor(G.clockTypeDef);
     clockWork.checkForValidLanguageVariant();
     G.buildTypeDef = DEFAULT_BUILDTYPE;
     G.Colortype = DEFAULT_LEDTYPE;
@@ -726,7 +726,7 @@ void ensureClockType() {
 //------------------------------------------------------------------------------
 
 void initClockType() {
-    usedClockType = clockWork.getPointer(G.clockTypeDef);
+    usedClockType = clockTypeFor(G.clockTypeDef);
     clockWork.normalizeMinuteVariant();
 
     // Area that will be animated:

@@ -1,21 +1,53 @@
-#include "ClockWork.h"
-#include "Font.h"
-#include "I2CBus.h"
-#include "NeoMultiFeature.hpp"
-#include "OpenWeatherMap.h"
-#include "SensitiveData.h"
-#include "Transitions/Transition.h"
 #include "WordClockState.h"
 #include "WordClockTypes/ClockType.hpp"
+
+#include "ClockWork.h"
+
+#include "ClockTypeRegistry.h"
+#include "Config.h"
+#include "Font.h"
+#include "Frame.h"
+#include "I2CBus.h"
+#include "Led.h"
+#include "LedStripInterface.h"
+#include "Mqtt.h"
+#include "NeoMultiFeature.hpp"
+#include "NeoPixelBusLedStripAdapter.h"
+#include "Network.h"
+#include "OpenWeatherMap.h"
+#include "SensitiveData.h"
+#include "WebPageAdapter.h"
+#include "WordClock.h"
 #include "math.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <BH1750.h>
+
+namespace eeprom {
+void write();
+}
+
+extern ClockType *usedClockType;
+extern Led led;
+extern LedStripInterface *activeLedStrip;
+extern SecondsFrame *secondsFrame;
+extern Mqtt mqtt;
+extern Network network;
+
+#include "Render/ColorStage.h"
+#include "Render/RenderPipeline.h"
+#include "Transitions/Transition.h"
+
+extern ColorStage colorStage;
+extern RenderPipeline renderPipeline;
 
 BH1750 lightMeter;
 
+namespace {
 uint8_t activeLedPin = UINT8_MAX;
 uint8_t activeLedColorType = UINT8_MAX;
 uint16_t activeLedCount = 0;
+} // namespace
 
 //------------------------------------------------------------------------------
 // Helper Functions
@@ -241,20 +273,6 @@ void ClockWork::loopHardwareButtons() {
 
 //------------------------------------------------------------------------------
 
-ClockType *ClockWork::getPointer(uint8_t type) {
-    switch (type) {
-#define X(name, id, var, i18n)                                                 \
-    case name:                                                                 \
-        return &var;
-        CLOCK_TYPES_LIST
-#undef X
-    default:
-        return nullptr;
-    }
-}
-
-//------------------------------------------------------------------------------
-
 void ClockWork::reallocateSecondsFrame() {
     delete secondsFrame;
     secondsFrame = nullptr;
@@ -320,6 +338,8 @@ uint32_t ClockWork::num32BitWithOnesAccordingToColumns() {
 }
 
 //------------------------------------------------------------------------------
+
+namespace {
 
 void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
     if (doc.overflowed()) {
@@ -448,6 +468,8 @@ void sendI2CScanResult(uint8_t client_nr, uint8_t sdaPin, uint8_t sclPin) {
     config["status"] = "ok";
     sendJsonToClient(client_nr, config);
 }
+
+} // namespace
 
 //------------------------------------------------------------------------------
 // Front Effect Functions
@@ -1108,7 +1130,7 @@ void ClockWork::applyClockType() {
     delay(10);
     Serial.printf("ClockType: %u\n", G.clockTypeDef);
 
-    usedClockType = getPointer(G.clockTypeDef);
+    usedClockType = clockTypeFor(G.clockTypeDef);
     normalizeMinuteVariant();
 
     checkForValidLanguageVariant();

@@ -4,3 +4,6 @@
 
 void applyTimezone();
 void sendMQTTUpdate();
+void setDefaultHardwarePins();
+bool hardwarePinsAreValid();
+void deleteActiveLedStrip();

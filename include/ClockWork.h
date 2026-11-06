@@ -83,7 +83,6 @@ public:
     //------------------------------------------------------------------------------
     // Helper Functions
     //------------------------------------------------------------------------------
-    ClockType *getPointer(uint8_t type);
     void initLedStrip(uint8_t num);
     void initHardwareButtons();
     uint32_t getLuxValue() const { return lux; }
