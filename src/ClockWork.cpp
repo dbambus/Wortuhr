@@ -21,7 +21,6 @@
 #include "math.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <BH1750.h>
 
 namespace eeprom {
 void write();
@@ -41,8 +40,6 @@ extern Network network;
 extern ColorStage colorStage;
 extern RenderPipeline renderPipeline;
 
-BH1750 lightMeter;
-
 namespace {
 uint8_t activeLedPin = UINT8_MAX;
 uint8_t activeLedColorType = UINT8_MAX;
@@ -53,88 +50,7 @@ uint16_t activeLedCount = 0;
 // Helper Functions
 //------------------------------------------------------------------------------
 
-/*
-Automatic Brightness Control (enabled/disabled by G.autoBrightEnabled)
-
-1. Measure ambient light with sensor BH1750, if available. If not, use LDR.
-2. Derive the ledGain for the LEDs 0.0 - 100.0%
-3. When ledGain changed, set parametersChanged = true
-
-Inputs:
-G.autoBrightEnabled, G.autoBrightMin, G.autoBrightMax, G.autoBrightPeak
-AUTOBRIGHT_LDR_RESBRIGHT, AUTOBRIGHT_LDR_RESDARK, AUTOBRIGHT_LDR_RESDIVIDER
-
-Outputs:
-lux = Ambient light [LUX]
-ledGain = gain for LEDs: 0.0-100.0% (n % of the configured bri:effectBri)
-*/
-
-void ClockWork::loopAutoBrightLogic() {
-    if (G.autoBrightEnabled != 1)
-        return;
-
-    if (G.autoBrightMin == G.autoBrightMax) {
-        // If min and max are identical, nothing needs to be measured.
-        ledGain = G.autoBrightMax;
-        return;
-    }
-
-    float ledGainOld = ledGain;
-    float luxNow;
-
-    if (bh1750Initialized) {
-        if (!lightMeter.measurementReady()) {
-            return;
-        }
-        luxNow = lightMeter.readLightLevel(); // 0.0-54612.5 LUX
-        if (luxNow < 0) {
-            return;
-        }
-    } else {
-        /*
-        The lux value is considerably misrepresented upwards at ADC values above
-        980. As 980 with an LDR5528 corresponds to approx. 1500 lux, but usually
-        no more than 1000 lux are reached indoors even on sunny days, a fixed
-        upper measurement limit of 980 is set here. Regardless of this, a
-        maximum value of 1023 has to be applied in any case in order to avoid
-        division by zero (analogRead is 0-1023)!
-        */
-        uint16_t adcValue = analogRead(A0);
-        if (adcValue > 980) {
-            adcValue = 980;
-        }
-
-        luxNow = (adcValue * AUTOBRIGHT_LDR_RESDARK * 10.0f) /
-                 (AUTOBRIGHT_LDR_RESBRIGHT * AUTOBRIGHT_LDR_RESDIVIDER *
-                  (1024.0f - adcValue));
-    }
-
-    /*
-    Even in HIGH_RES_MODE, the BH1750 only has a precision of 1 lux. The decimal
-    point values supplied by the library should therefore be considered as
-    'noise' and their use makes little to no sense. Also: in order to not
-    trigger parametersChanged more often than necessary, the value gets rounded.
-    */
-
-    lux = round(luxNow);
-
-    ledGain = map(lux, 0, G.autoBrightPeak, G.autoBrightMin, G.autoBrightMax);
-
-    // Ensure ledGain meets the defined limits.
-    uint16_t minimum = min(G.autoBrightMin, G.autoBrightMax);
-    uint16_t maximum = max(G.autoBrightMin, G.autoBrightMax);
-
-    if (ledGain >= maximum) {
-        ledGain = maximum;
-    }
-    if (ledGain <= minimum) {
-        ledGain = minimum;
-    }
-
-    if (ledGainOld != ledGain) {
-        parametersChanged = true;
-    }
-}
+void ClockWork::initAutoBrightness() { autoBrightness.begin(); }
 
 //------------------------------------------------------------------------------
 
@@ -923,7 +839,7 @@ void ClockWork::loopEverySecond(struct tm &tm) {
         weather.loop();
     }
 
-    loopAutoBrightLogic();
+    autoBrightness.loop();
 
     if (G.prog == COMMAND_IDLE && G.conf == COMMAND_IDLE) {
         led.clear();
@@ -1074,9 +990,9 @@ void ClockWork::sendAutoBrightValues() {
     config["autoBrightMin"] = G.autoBrightMin;
     config["autoBrightMax"] = G.autoBrightMax;
     config["autoBrightPeak"] = G.autoBrightPeak;
-    config["autoBrightSensor"] = (uint32_t)lux;
+    config["autoBrightSensor"] = autoBrightness.lux();
     config["autoBrightGain"] = (uint8_t)ledGain;
-    config["autoBrightSource"] = autoBrightUsingBH1750 ? "BH1750" : "LDR";
+    config["autoBrightSource"] = autoBrightness.usesBH1750() ? "BH1750" : "LDR";
 
     sendJsonToClient(G.clientNr, config);
 }

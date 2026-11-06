@@ -308,8 +308,6 @@ extern GLOBAL G;
 
 // Brightness related variables
 extern float ledGain;
-extern bool bh1750Initialized;
-extern bool autoBrightUsingBH1750;
 
 extern uint8_t _second;
 extern uint8_t _secondFrame;

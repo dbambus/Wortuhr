@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AutoBrightness.h"
 #include "ClockFace.h"
 #include "HardwareButtonController.h"
 #include <NeoPixelBus.h>
@@ -8,15 +9,14 @@ class ClockWork {
 private:
     uint16_t countMillisSpeed = 0;
     uint32_t previousMillis = 0;
-    uint32_t lux = 0;
     HardwareButtonController hardwareButtonController;
     ClockFace clockFace;
+    AutoBrightness autoBrightness;
 
 private:
     //------------------------------------------------------------------------------
     // Helper Functions
     //------------------------------------------------------------------------------
-    void loopAutoBrightLogic();
     void loopHardwareButtons();
     void handleHardwareButtonAction(HardwareButtonAction action);
     void toggleHardwareButtonPower();
@@ -102,7 +102,8 @@ public:
     //------------------------------------------------------------------------------
     void initLedStrip(uint8_t num);
     void initHardwareButtons();
-    uint32_t getLuxValue() const { return lux; }
+    void initAutoBrightness();
+    const AutoBrightness &getAutoBrightness() const { return autoBrightness; }
 
     //------------------------------------------------------------------------------
     // Minute Functions

@@ -967,10 +967,11 @@ void Mqtt::sendState() {
     // Send diagnostic values
     {
         StaticJsonDocument<320> doc;
-        doc["lux"] = round(clockWork.getLuxValue()); // Round lux value
+        doc["lux"] =
+            round(clockWork.getAutoBrightness().lux()); // Round lux value
         doc["led_gain"] = round(ledGain); // Convert to percent and round
         doc["auto_brightness_source"] =
-            autoBrightUsingBH1750 ? "BH1750" : "LDR";
+            clockWork.getAutoBrightness().usesBH1750() ? "BH1750" : "LDR";
         doc["rssi"] = WiFi.RSSI();             // WiFi signal strength
         doc["ip"] = WiFi.localIP().toString(); // Current IP address
         doc["uptime"] = millis() / 1000;       // Seconds since boot

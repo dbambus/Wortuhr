@@ -19,7 +19,6 @@
 #include "Config.h"
 
 #include "WordClock.h"
-#include <BH1750.h>
 #include <NeoPixelBus.h>
 #include <RTClib.h>
 #include <WiFiClient.h>
@@ -55,7 +54,6 @@ HTTPUpdateServer httpUpdater;
 const char TZ_Europe_Berlin[] = "CET-1CEST,M3.5.0,M10.5.0/3";
 
 RTC_Type RTC;
-extern BH1750 lightMeter;
 
 #include "ClockWork.h"
 #include "Frame.h"
@@ -864,28 +862,6 @@ void printSystemInfo() {
 }
 
 //------------------------------------------------------------------------------
-
-void initAutoBrightness() {
-#if defined(ESP32)
-    analogReadResolution(10);
-#endif
-
-    // Find BH1750 and initialize if available else fallback to LDR if available
-    byte bh1750Address = i2cBus::findBH1750Address(G.i2cSdaPin, G.i2cSclPin);
-
-    if (bh1750Address != 0) {
-        lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, bh1750Address);
-        Serial.println("BH1750 initialized");
-        bh1750Initialized = true;
-        autoBrightUsingBH1750 = true;
-    } else {
-        Serial.println("BH1750 initialisation error, using LDR if available");
-        bh1750Initialized = false;
-        autoBrightUsingBH1750 = false;
-    }
-}
-
-//------------------------------------------------------------------------------
 // Start setup()
 //------------------------------------------------------------------------------
 
@@ -931,7 +907,7 @@ void setup() {
     startMdns();
 
     printSystemInfo();
-    initAutoBrightness();
+    clockWork.initAutoBrightness();
 
     Serial.println("--------------------------------------");
     Serial.println("End Setup");
