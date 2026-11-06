@@ -19,6 +19,21 @@ private:
     static bool checkIfMqttUserIsEmpty();
     static const char *getEffectName();
 
+    static void handleHomeAssistantStatus(const char *msg);
+    static void handleAutoBrightnessCommand(const char *msg);
+    static bool handleTransitionCommand(const String &topicStr,
+                                        const char *msg);
+    static void handleJsonCommand(const String &topicStr, const char *msg);
+    static void handleLightCommand(const JsonDocument &doc);
+    static void handleEffectSpeedCommand(const char *msg);
+
+    static void publishLightState();
+    void publishDiagnostics();
+    static void publishEffectSpeedState();
+    static void publishScrollingTextState();
+    static void publishAutoBrightnessState();
+    static void publishTransitionStates();
+
 public:
     Mqtt(ClockWork &cw);
     ~Mqtt();

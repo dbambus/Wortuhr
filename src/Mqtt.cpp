@@ -794,6 +794,129 @@ static void applyTransitionSelect(const char *id, const char *msg,
                        true);
 }
 
+void Mqtt::handleHomeAssistantStatus(const char *msg) {
+    if (strcmp(msg, "online") == 0 && mqttInstance) {
+        Serial.println("MQTT: Home Assistant online, re-announcing");
+        mqttInstance->sendDiscovery();
+        mqttInstance->sendState();
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::handleAutoBrightnessCommand(const char *msg) {
+    bool autoBrightnessChanged = false;
+    if (strcmp(msg, "ON") == 0) {
+        G.autoBrightEnabled = 1;
+        Serial.println("MQTT: Auto Brightness ON");
+        autoBrightnessChanged = true;
+    } else if (strcmp(msg, "OFF") == 0) {
+        G.autoBrightEnabled = 0;
+        Serial.println("MQTT: Auto Brightness OFF");
+        autoBrightnessChanged = true;
+    } else {
+        Serial.print("MQTT: Unknown command: ");
+        Serial.println(msg);
+    }
+
+    if (autoBrightnessChanged) {
+        parametersChanged = true;
+    }
+
+    // Always echo the current retained state, even for invalid commands.
+    publishAutoBrightnessState();
+
+    broadcastToWeb("autobright", "value", G.autoBrightEnabled);
+}
+
+//------------------------------------------------------------------------------
+
+// Transition selects/number/switch are plain payloads, not JSON. Each applies
+// the setting, persists it, re-inits so it takes effect, and echoes the
+// resulting state back to Home Assistant.
+bool Mqtt::handleTransitionCommand(const String &topicStr, const char *msg) {
+    if (topicStr == topic("transition_type/set")) {
+        applyTransitionSelect("transition_type", msg, TRANSITION_TYPES,
+                              LABELED_VALUE_COUNT(TRANSITION_TYPES),
+                              G.transitionType);
+        return true;
+    }
+    if (topicStr == topic("transition_colorize/set")) {
+        applyTransitionSelect("transition_colorize", msg, TRANSITION_COLORIZE,
+                              LABELED_VALUE_COUNT(TRANSITION_COLORIZE),
+                              G.colorize);
+        return true;
+    }
+    if (topicStr == topic("transition_duration/set")) {
+        applyTransitionSelect("transition_duration", msg, TRANSITION_DURATION,
+                              LABELED_VALUE_COUNT(TRANSITION_DURATION),
+                              G.transitionDuration);
+        return true;
+    }
+    return false;
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::handleJsonCommand(const String &topicStr, const char *msg) {
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, msg);
+    if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.c_str());
+        return;
+    }
+
+    if (topicStr == topic("cmd")) {
+        handleLightCommand(doc);
+    } else if (topicStr == topic("scrolltext/set")) {
+        processScrollingText(doc);
+    } else if (topicStr == topic("effect_speed/set")) {
+        handleEffectSpeedCommand(msg);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::handleLightCommand(const JsonDocument &doc) {
+    bool stateChanged = processState(doc);
+    stateChanged |= processEffect(doc);
+    processScrollingText(doc);
+    stateChanged |= processColor(doc);
+    stateChanged |= processBrightness(doc);
+    if (stateChanged && mqttInstance) {
+        mqttInstance->sendState();
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::handleEffectSpeedCommand(const char *msg) {
+    // Process direct string value
+    int speed = atoi(msg);
+    if (speed < EFFECT_SPEED_MIN || speed > EFFECT_SPEED_MAX) {
+        return;
+    }
+
+    G.effectSpeed = speed;
+
+    // Effect speed is a user setting, so persist accepted values.
+    eeprom::write();
+    parametersChanged = true;
+
+    // If we are in scrolltext mode, reinitialize the program
+    if (G.prog == COMMAND_MODE_SCROLLINGTEXT) {
+        G.progInit = true;
+    }
+
+    // Send new state to Home Assistant
+    publishEffectSpeedState();
+
+    webStateChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
 void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
     // Determine message type before parsing; not every topic uses JSON.
     String topicStr = String(receivedTopic);
@@ -813,106 +936,115 @@ void Mqtt::callback(char *receivedTopic, byte *payload, unsigned int length) {
     // Home Assistant's birth message: re-announce discovery and state so the
     // device repopulates after an HA restart, even if retained config was lost.
     if (topicStr == HOMEASSISTANT_STATUS_TOPIC) {
-        if (strcmp(msg, "online") == 0 && mqttInstance) {
-            Serial.println("MQTT: Home Assistant online, re-announcing");
-            mqttInstance->sendDiscovery();
-            mqttInstance->sendState();
-        }
+        handleHomeAssistantStatus(msg);
         return;
     }
 
     // MQTT switch commands are plain ON/OFF payloads, not JSON.
     if (topicStr == topic("auto_brightness/set")) {
-        bool autoBrightnessChanged = false;
-        if (strcmp(msg, "ON") == 0) {
-            G.autoBrightEnabled = 1;
-            Serial.println("MQTT: Auto Brightness ON");
-            autoBrightnessChanged = true;
-        } else if (strcmp(msg, "OFF") == 0) {
-            G.autoBrightEnabled = 0;
-            Serial.println("MQTT: Auto Brightness OFF");
-            autoBrightnessChanged = true;
-        } else {
-            Serial.print("MQTT: Unknown command: ");
-            Serial.println(msg);
-        }
-
-        if (autoBrightnessChanged) {
-            parametersChanged = true;
-        }
-
-        // Always echo the current retained state, even for invalid commands.
-        mqttClient.publish(topic("auto_brightness/state").c_str(),
-                           G.autoBrightEnabled ? "ON" : "OFF", true);
-
-        broadcastToWeb("autobright", "value", G.autoBrightEnabled);
+        handleAutoBrightnessCommand(msg);
         return;
     }
 
-    // Transition selects/number/switch are plain payloads, not JSON. Each
-    // applies the setting, persists it, re-inits so it takes effect, and echoes
-    // the resulting state back to Home Assistant.
-    if (topicStr == topic("transition_type/set")) {
-        applyTransitionSelect("transition_type", msg, TRANSITION_TYPES,
-                              LABELED_VALUE_COUNT(TRANSITION_TYPES),
-                              G.transitionType);
+    if (handleTransitionCommand(topicStr, msg)) {
         return;
     }
-    if (topicStr == topic("transition_colorize/set")) {
-        applyTransitionSelect("transition_colorize", msg, TRANSITION_COLORIZE,
-                              LABELED_VALUE_COUNT(TRANSITION_COLORIZE),
-                              G.colorize);
-        return;
-    }
-    if (topicStr == topic("transition_duration/set")) {
-        applyTransitionSelect("transition_duration", msg, TRANSITION_DURATION,
-                              LABELED_VALUE_COUNT(TRANSITION_DURATION),
-                              G.transitionDuration);
-        return;
-    }
+
     // Remaining command topics use JSON payloads.
-    StaticJsonDocument<512> doc;
-    DeserializationError error = deserializeJson(doc, msg);
-    if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.c_str());
-        return;
+    handleJsonCommand(topicStr, msg);
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::publishLightState() {
+    StaticJsonDocument<200> doc;
+    doc["state"] = (led.getState()) ? "ON" : "OFF";
+
+    // Calculate actual brightness value
+    float actualBrightness;
+    if (G.autoBrightEnabled) {
+        actualBrightness = (ledGain / 100.0f) * G.color[Foreground].B;
+    } else {
+        actualBrightness = G.color[Foreground].B;
+    }
+    doc["brightness"] = round(actualBrightness * 255);
+    doc["color_mode"] = "hs";
+
+    // Color as object with h and s
+    JsonObject color = doc.createNestedObject("color");
+    color["h"] = round(G.color[Foreground].H * 360); // Hue 0-360
+    color["s"] = round(G.color[Foreground].S * 100); // Saturation 0-100
+
+    const char *effect = getEffectName();
+    if (effect) {
+        doc["effect"] = effect;
     }
 
-    // Process remaining messages
-    if (topicStr == topic("cmd")) {
-        bool stateChanged = processState(doc);
-        stateChanged |= processEffect(doc);
-        processScrollingText(doc);
-        stateChanged |= processColor(doc);
-        stateChanged |= processBrightness(doc);
-        if (stateChanged && mqttInstance) {
-            mqttInstance->sendState();
-        }
-    } else if (topicStr == topic("scrolltext/set")) {
-        processScrollingText(doc);
-    } else if (topicStr == topic("effect_speed/set")) {
-        // Process direct string value
-        int speed = atoi(msg);
-        if (speed >= EFFECT_SPEED_MIN && speed <= EFFECT_SPEED_MAX) {
-            G.effectSpeed = speed;
+    char buffer[200];
+    serializeJson(doc, buffer);
+    mqttClient.publish(topic("status").c_str(), buffer, true);
+}
 
-            // Effect speed is a user setting, so persist accepted values.
-            eeprom::write();
-            parametersChanged = true;
+//------------------------------------------------------------------------------
 
-            // If we are in scrolltext mode, reinitialize the program
-            if (G.prog == COMMAND_MODE_SCROLLINGTEXT) {
-                G.progInit = true;
-            }
+void Mqtt::publishDiagnostics() {
+    StaticJsonDocument<320> doc;
+    doc["lux"] = round(clockWork.getAutoBrightness().lux()); // Round lux value
+    doc["led_gain"] = round(ledGain); // Convert to percent and round
+    doc["auto_brightness_source"] =
+        clockWork.getAutoBrightness().usesBH1750() ? "BH1750" : "LDR";
+    doc["rssi"] = WiFi.RSSI();             // WiFi signal strength
+    doc["ip"] = WiFi.localIP().toString(); // Current IP address
+    doc["uptime"] = millis() / 1000;       // Seconds since boot
+    char buffer[320];
+    serializeJson(doc, buffer);
+    mqttClient.publish(topic("diagnostics").c_str(), buffer, true);
+}
 
-            // Send new state to Home Assistant
-            mqttClient.publish(topic("effect_speed/state").c_str(),
-                               String(G.effectSpeed).c_str(), true);
+//------------------------------------------------------------------------------
 
-            webStateChanged = true;
-        }
-    }
+void Mqtt::publishEffectSpeedState() {
+    mqttClient.publish(topic("effect_speed/state").c_str(),
+                       String(G.effectSpeed).c_str(), true);
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::publishScrollingTextState() {
+    StaticJsonDocument<200> doc;
+    doc["scrolling_text"] = G.scrollingText;
+    char buffer[200];
+    serializeJson(doc, buffer);
+    mqttClient.publish(topic("scrolltext/state").c_str(), buffer, true);
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::publishAutoBrightnessState() {
+    mqttClient.publish(topic("auto_brightness/state").c_str(),
+                       G.autoBrightEnabled ? "ON" : "OFF", true);
+}
+
+//------------------------------------------------------------------------------
+
+// Transition settings status (selects echo their labels)
+void Mqtt::publishTransitionStates() {
+    mqttClient.publish(
+        topic("transition_type/state").c_str(),
+        labelForValue(TRANSITION_TYPES, LABELED_VALUE_COUNT(TRANSITION_TYPES),
+                      G.transitionType, TRANSITION_TYPES[0].label),
+        true);
+    mqttClient.publish(topic("transition_colorize/state").c_str(),
+                       labelForValue(TRANSITION_COLORIZE,
+                                     LABELED_VALUE_COUNT(TRANSITION_COLORIZE),
+                                     G.colorize, TRANSITION_COLORIZE[0].label),
+                       true);
+    mqttClient.publish(topic("transition_duration/state").c_str(),
+                       labelForValue(TRANSITION_DURATION,
+                                     LABELED_VALUE_COUNT(TRANSITION_DURATION),
+                                     G.transitionDuration,
+                                     TRANSITION_DURATION[1].label),
+                       true);
 }
 
 //------------------------------------------------------------------------------
@@ -934,94 +1066,12 @@ None
 */
 
 void Mqtt::sendState() {
-    // Main status
-    {
-        StaticJsonDocument<200> doc;
-        doc["state"] = (led.getState()) ? "ON" : "OFF";
-
-        // Calculate actual brightness value
-        float actualBrightness;
-        if (G.autoBrightEnabled) {
-            actualBrightness = (ledGain / 100.0f) * G.color[Foreground].B;
-        } else {
-            actualBrightness = G.color[Foreground].B;
-        }
-        doc["brightness"] = round(actualBrightness * 255);
-        doc["color_mode"] = "hs";
-
-        // Color as object with h and s
-        JsonObject color = doc.createNestedObject("color");
-        color["h"] = round(G.color[Foreground].H * 360); // Hue 0-360
-        color["s"] = round(G.color[Foreground].S * 100); // Saturation 0-100
-
-        const char *effect = getEffectName();
-        if (effect) {
-            doc["effect"] = effect;
-        }
-
-        char buffer[200];
-        serializeJson(doc, buffer);
-        mqttClient.publish(topic("status").c_str(), buffer, true);
-    }
-
-    // Send diagnostic values
-    {
-        StaticJsonDocument<320> doc;
-        doc["lux"] =
-            round(clockWork.getAutoBrightness().lux()); // Round lux value
-        doc["led_gain"] = round(ledGain); // Convert to percent and round
-        doc["auto_brightness_source"] =
-            clockWork.getAutoBrightness().usesBH1750() ? "BH1750" : "LDR";
-        doc["rssi"] = WiFi.RSSI();             // WiFi signal strength
-        doc["ip"] = WiFi.localIP().toString(); // Current IP address
-        doc["uptime"] = millis() / 1000;       // Seconds since boot
-        char buffer[320];
-        serializeJson(doc, buffer);
-        mqttClient.publish(topic("diagnostics").c_str(), buffer, true);
-    }
-
-    // Effect speed status - Always update current value
-    {
-        mqttClient.publish(topic("effect_speed/state").c_str(),
-                           String(G.effectSpeed).c_str(), true);
-    }
-
-    // Scrolling text status
-    {
-        StaticJsonDocument<200> doc;
-        doc["scrolling_text"] = G.scrollingText;
-        char buffer[200];
-        serializeJson(doc, buffer);
-        mqttClient.publish(topic("scrolltext/state").c_str(), buffer, true);
-    }
-
-    // Auto brightness status
-    {
-        mqttClient.publish(topic("auto_brightness/state").c_str(),
-                           G.autoBrightEnabled ? "ON" : "OFF", true);
-    }
-
-    // Transition settings status (selects echo their labels)
-    {
-        mqttClient.publish(topic("transition_type/state").c_str(),
-                           labelForValue(TRANSITION_TYPES,
-                                         LABELED_VALUE_COUNT(TRANSITION_TYPES),
-                                         G.transitionType,
-                                         TRANSITION_TYPES[0].label),
-                           true);
-        mqttClient.publish(
-            topic("transition_colorize/state").c_str(),
-            labelForValue(TRANSITION_COLORIZE,
-                          LABELED_VALUE_COUNT(TRANSITION_COLORIZE), G.colorize,
-                          TRANSITION_COLORIZE[0].label),
-            true);
-        mqttClient.publish(
-            topic("transition_duration/state").c_str(),
-            labelForValue(TRANSITION_DURATION,
-                          LABELED_VALUE_COUNT(TRANSITION_DURATION),
-                          G.transitionDuration, TRANSITION_DURATION[1].label),
-            true);
-    }
+    publishLightState();
+    publishDiagnostics();
+    publishEffectSpeedState();
+    publishScrollingTextState();
+    publishAutoBrightnessState();
+    publishTransitionStates();
 
     // Update online status
     mqttClient.publish(topic("availability").c_str(), "online", true);
@@ -1055,20 +1105,12 @@ void Mqtt::sendDiscovery() {
     discoveryMigrationStartedAt = millis();
 }
 
-void Mqtt::publishDiscoveryConfigs() {
-    // The MAC is the stable device identifier and the base for every entity's
-    // unique_id, so renaming the MQTT base topic never orphans the device. The
-    // colon-free variant is used in the discovery topic path.
-    String unique_id = WiFi.macAddress();
-    String discoveryNode = macDiscoveryNode();
-
-    String base = String(G.mqtt.topic);
-    DynamicJsonDocument doc(3072);
-
-    // Light: the device's primary entity. name=null makes it inherit the device
-    // name instead of repeating it (Home Assistant has_entity_name convention).
-    beginDiscovery(doc, unique_id);
-    doc["uniq_id"] = unique_id;
+// Light: the device's primary entity. name=null makes it inherit the device
+// name instead of repeating it (Home Assistant has_entity_name convention).
+static void publishLightDiscovery(JsonDocument &doc, const String &deviceId,
+                                  const String &node, const String &base) {
+    beginDiscovery(doc, deviceId);
+    doc["uniq_id"] = deviceId;
     doc["name"] = (const char *)nullptr;
     doc["schema"] = "json";
     doc["stat_t"] = base + "/status";
@@ -1088,11 +1130,16 @@ void Mqtt::publishDiscoveryConfigs() {
     effectList.add("Fire");
     effectList.add("Color");
     effectList.add("Symbol");
-    publishJsonStream(discoveryTopic("light", discoveryNode), doc);
+    publishJsonStream(discoveryTopic("light", node), doc);
+}
 
-    // Text entity for the scrolling text mode.
-    beginDiscovery(doc, unique_id);
-    doc["uniq_id"] = unique_id + "_scrolltext";
+// Text entity for the scrolling text mode.
+static void publishScrollingTextDiscovery(JsonDocument &doc,
+                                          const String &deviceId,
+                                          const String &node,
+                                          const String &base) {
+    beginDiscovery(doc, deviceId);
+    doc["uniq_id"] = deviceId + "_scrolltext";
     doc["name"] = "Scrolling Text";
     doc["ic"] = "mdi:text";
     doc["stat_t"] = base + "/scrolltext/state";
@@ -1100,25 +1147,31 @@ void Mqtt::publishDiscoveryConfigs() {
     doc["val_tpl"] = "{{ value_json.scrolling_text }}";
     doc["cmd_tpl"] = "{ \"scrolling_text\": {{ value | to_json }} }";
     doc["max"] = sizeof(G.scrollingText) - 1;
-    publishJsonStream(discoveryTopic("text", discoveryNode + "_scrolltext"),
-                      doc);
+    publishJsonStream(discoveryTopic("text", node + "_scrolltext"), doc);
+}
 
-    // Notify entity: pushes a message to the marquee. It targets the JSON
-    // command topic with both the text and the Scrollingtext effect, so the
-    // clock switches to scrolling-text mode and shows the message immediately.
-    beginDiscovery(doc, unique_id);
-    doc["uniq_id"] = unique_id + "_message";
+// Notify entity: pushes a message to the marquee. It targets the JSON
+// command topic with both the text and the Scrollingtext effect, so the
+// clock switches to scrolling-text mode and shows the message immediately.
+static void publishMessageDiscovery(JsonDocument &doc, const String &deviceId,
+                                    const String &node, const String &base) {
+    beginDiscovery(doc, deviceId);
+    doc["uniq_id"] = deviceId + "_message";
     doc["name"] = "Message";
     doc["ic"] = "mdi:message-text";
     doc["cmd_t"] = base + "/cmd";
     doc["cmd_tpl"] = "{\"scrolling_text\": {{ value | to_json }}, \"effect\": "
                      "\"Scrollingtext\"}";
-    publishJsonStream(discoveryTopic("notify", discoveryNode + "_message"),
-                      doc);
+    publishJsonStream(discoveryTopic("notify", node + "_message"), doc);
+}
 
-    // Number entity for animation/effect speed.
-    beginDiscovery(doc, unique_id);
-    doc["uniq_id"] = unique_id + "_effect_speed";
+// Number entity for animation/effect speed.
+static void publishEffectSpeedDiscovery(JsonDocument &doc,
+                                        const String &deviceId,
+                                        const String &node,
+                                        const String &base) {
+    beginDiscovery(doc, deviceId);
+    doc["uniq_id"] = deviceId + "_effect_speed";
     doc["name"] = "Effect Speed";
     doc["ic"] = "mdi:speedometer";
     doc["stat_t"] = base + "/effect_speed/state";
@@ -1126,12 +1179,16 @@ void Mqtt::publishDiscoveryConfigs() {
     doc["min"] = 1;
     doc["max"] = 10;
     doc["step"] = 1;
-    publishJsonStream(discoveryTopic("number", discoveryNode + "_effect_speed"),
-                      doc);
+    publishJsonStream(discoveryTopic("number", node + "_effect_speed"), doc);
+}
 
-    // Switch entity for ambient-light based brightness control.
-    beginDiscovery(doc, unique_id);
-    doc["uniq_id"] = unique_id + "_auto_brightness";
+// Switch entity for ambient-light based brightness control.
+static void publishAutoBrightnessDiscovery(JsonDocument &doc,
+                                           const String &deviceId,
+                                           const String &node,
+                                           const String &base) {
+    beginDiscovery(doc, deviceId);
+    doc["uniq_id"] = deviceId + "_auto_brightness";
     doc["name"] = "Auto Brightness";
     doc["ic"] = "mdi:brightness-auto";
     doc["dev_cla"] = "switch";
@@ -1139,41 +1196,66 @@ void Mqtt::publishDiscoveryConfigs() {
     doc["cmd_t"] = base + "/auto_brightness/set";
     doc["pl_on"] = "ON";
     doc["pl_off"] = "OFF";
-    publishJsonStream(
-        discoveryTopic("switch", discoveryNode + "_auto_brightness"), doc);
+    publishJsonStream(discoveryTopic("switch", node + "_auto_brightness"), doc);
+}
 
-    // Transition settings.
-    publishSelect(doc, unique_id, discoveryNode, "transition_type",
-                  "Transition Type", "mdi:transition", TRANSITION_TYPES,
+// Transition settings.
+static void publishTransitionDiscovery(JsonDocument &doc,
+                                       const String &deviceId,
+                                       const String &node) {
+    publishSelect(doc, deviceId, node, "transition_type", "Transition Type",
+                  "mdi:transition", TRANSITION_TYPES,
                   LABELED_VALUE_COUNT(TRANSITION_TYPES));
-    publishSelect(doc, unique_id, discoveryNode, "transition_colorize",
+    publishSelect(doc, deviceId, node, "transition_colorize",
                   "Transition Colorize", "mdi:palette", TRANSITION_COLORIZE,
                   LABELED_VALUE_COUNT(TRANSITION_COLORIZE));
-    publishSelect(doc, unique_id, discoveryNode, "transition_duration",
+    publishSelect(doc, deviceId, node, "transition_duration",
                   "Transition Duration", "mdi:timer-outline",
                   TRANSITION_DURATION,
                   LABELED_VALUE_COUNT(TRANSITION_DURATION));
+}
 
-    // Diagnostic sensors, all read from the shared diagnostics topic.
-    publishDiagSensor(doc, unique_id, discoveryNode, "lux", "Illuminance",
-                      "illuminance", "lx", "mdi:white-balance-sunny",
-                      "measurement", "{{ value_json.lux }}");
-    publishDiagSensor(doc, unique_id, discoveryNode, "led_gain", "LED Gain",
+// Diagnostic sensors, all read from the shared diagnostics topic.
+static void publishDiagnosticsDiscovery(JsonDocument &doc,
+                                        const String &deviceId,
+                                        const String &node) {
+    publishDiagSensor(doc, deviceId, node, "lux", "Illuminance", "illuminance",
+                      "lx", "mdi:white-balance-sunny", "measurement",
+                      "{{ value_json.lux }}");
+    publishDiagSensor(doc, deviceId, node, "led_gain", "LED Gain",
                       "power_factor", "%", "mdi:brightness-percent",
                       "measurement", "{{ value_json.led_gain }}");
-    publishDiagSensor(doc, unique_id, discoveryNode, "auto_brightness_source",
+    publishDiagSensor(doc, deviceId, node, "auto_brightness_source",
                       "Auto Brightness Source", nullptr, nullptr,
                       "mdi:lightbulb-auto", nullptr,
                       "{{ value_json.auto_brightness_source }}");
-    publishDiagSensor(doc, unique_id, discoveryNode, "rssi", "WiFi Signal",
+    publishDiagSensor(doc, deviceId, node, "rssi", "WiFi Signal",
                       "signal_strength", "dBm", nullptr, "measurement",
                       "{{ value_json.rssi }}");
-    publishDiagSensor(doc, unique_id, discoveryNode, "ip", "IP Address",
-                      nullptr, nullptr, "mdi:ip-network", nullptr,
-                      "{{ value_json.ip }}");
-    publishDiagSensor(doc, unique_id, discoveryNode, "uptime", "Uptime",
-                      "duration", "s", nullptr, "total_increasing",
-                      "{{ value_json.uptime }}");
+    publishDiagSensor(doc, deviceId, node, "ip", "IP Address", nullptr, nullptr,
+                      "mdi:ip-network", nullptr, "{{ value_json.ip }}");
+    publishDiagSensor(doc, deviceId, node, "uptime", "Uptime", "duration", "s",
+                      nullptr, "total_increasing", "{{ value_json.uptime }}");
+}
+
+//------------------------------------------------------------------------------
+
+void Mqtt::publishDiscoveryConfigs() {
+    // The MAC is the stable device identifier and the base for every entity's
+    // unique_id, so renaming the MQTT base topic never orphans the device. The
+    // colon-free variant is used in the discovery topic path.
+    const String deviceId = WiFi.macAddress();
+    const String node = macDiscoveryNode();
+    const String base = String(G.mqtt.topic);
+    DynamicJsonDocument doc(3072);
+
+    publishLightDiscovery(doc, deviceId, node, base);
+    publishScrollingTextDiscovery(doc, deviceId, node, base);
+    publishMessageDiscovery(doc, deviceId, node, base);
+    publishEffectSpeedDiscovery(doc, deviceId, node, base);
+    publishAutoBrightnessDiscovery(doc, deviceId, node, base);
+    publishTransitionDiscovery(doc, deviceId, node);
+    publishDiagnosticsDiscovery(doc, deviceId, node);
 
     // Make the device available now that its entities are announced.
     mqttClient.publish(topic("availability").c_str(), "online", true);
