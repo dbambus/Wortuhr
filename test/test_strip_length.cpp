@@ -42,7 +42,7 @@ const size_t LAYOUT_COUNT = sizeof(LAYOUTS) / sizeof(LAYOUTS[0]);
 
 const BuildTypeDef BUILD_TYPES[] = {
     BuildTypeDef::Normal, BuildTypeDef::DoubleResM1, BuildTypeDef::DoubleRes,
-    BuildTypeDef::TrippleRes, BuildTypeDef::QuadRes};
+    BuildTypeDef::TripleRes, BuildTypeDef::QuadRes};
 
 const MinuteVariant MINUTE_VARIANTS[] = {
     MinuteVariant::Off, MinuteVariant::LED4x, MinuteVariant::LED7x,

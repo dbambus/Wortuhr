@@ -243,12 +243,12 @@
  * settings.
  *
  * [xx xx xx xx xx xx xx xx] = (DoubleRes)
- * [xxx xxx xxx xxx xxx xxx] = (TrippleRes)
+ * [xxx xxx xxx xxx xxx xxx] = (TripleRes)
  * [xxxx xxxx xxxx xxxx xxxx] = (QuadRes)
  *
  * Valid values:
  * [BuildTypeDef::Normal, BuildTypeDef::DoubleResM1,
- *  BuildTypeDef::DoubleRes, BuildTypeDef::TrippleRes,
+ *  BuildTypeDef::DoubleRes, BuildTypeDef::TripleRes,
  *  BuildTypeDef::QuadRes]
  *
  * Changing this setting in the web interface writes the new value to EEPROM

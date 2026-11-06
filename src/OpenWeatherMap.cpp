@@ -28,9 +28,9 @@ constexpr uint32_t requestIntervalMs = 10UL * 60UL * 1000UL;
 constexpr uint32_t forecastMaxAgeMs =
     3 * requestIntervalMs + requestIntervalMs / 2;
 
-template <size_t N> void buildResource(char (&dest)[N], const char *apikey) {
+template <size_t N> void buildResource(char (&dest)[N], const char *apiKey) {
     snprintf(dest, N, "/data/2.5/forecast?id=%s&units=metric&APPID=%s&cnt=%u",
-             G.openWeatherMap.cityid, apikey,
+             G.openWeatherMap.cityId, apiKey,
              static_cast<unsigned>(2 * forecast::slots));
 }
 
@@ -116,10 +116,10 @@ void OpenWMap::startWeatherRequest() {
     Serial.println("--------------------------------------");
 
     char resource[100];
-    buildResource(resource, G.openWeatherMap.apikey);
+    buildResource(resource, G.openWeatherMap.apiKey);
 
-    char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
-    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
+    char apiKeyMasked[sizeof(G.openWeatherMap.apiKey) + 1] = {0};
+    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apiKey);
     char maskedResource[sizeof(resource)];
     buildResource(maskedResource, apiKeyMasked);
 

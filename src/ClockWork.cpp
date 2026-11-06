@@ -333,7 +333,7 @@ void ClockWork::initLedStrip(uint8_t num) {
 
 //------------------------------------------------------------------------------
 
-uint32_t ClockWork::num32BitWithOnesAccordingToColumns() {
+uint32_t ClockWork::allColumnsMask() {
     return (1U << usedClockType->colsWordMatrix()) - 1;
 }
 
@@ -341,7 +341,7 @@ uint32_t ClockWork::num32BitWithOnesAccordingToColumns() {
 
 namespace {
 
-void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
+void sendJsonToClient(uint8_t clientNr, const JsonDocument &doc) {
     if (doc.overflowed()) {
         Serial.println("[ERROR] sendJsonToClient(): document capacity too "
                        "small, keys are missing");
@@ -363,7 +363,7 @@ void sendJsonToClient(uint8_t client_nr, const JsonDocument &doc) {
     Serial.print("Sending Payload:");
     Serial.println(payload);
 
-    webSocket.sendTXT(client_nr, payload);
+    webSocket.sendTXT(clientNr, payload);
 }
 
 //------------------------------------------------------------------------------
@@ -384,18 +384,17 @@ void broadcastJsonToClients(const JsonDocument &doc) {
 void fillColorValues(JsonDocument &config) {
     config["command"] = "set";
     for (uint8_t i = 0; i < ColorPositionCount; i++) {
-        char string2Send[7];
-        sprintf(string2Send, "hsb%d%d", i, 0);
-        config[string2Send] =
-            static_cast<uint16_t>(lroundf(G.color[i].H * 360));
-        sprintf(string2Send, "hsb%d%d", i, 1);
-        config[string2Send] = static_cast<uint8_t>(lroundf(G.color[i].S * 100));
-        sprintf(string2Send, "hsb%d%d", i, 2);
-        config[string2Send] = static_cast<uint8_t>(lroundf(G.color[i].B * 100));
+        char key[7];
+        sprintf(key, "hsb%d%d", i, 0);
+        config[key] = static_cast<uint16_t>(lroundf(G.color[i].H * 360));
+        sprintf(key, "hsb%d%d", i, 1);
+        config[key] = static_cast<uint8_t>(lroundf(G.color[i].S * 100));
+        sprintf(key, "hsb%d%d", i, 2);
+        config[key] = static_cast<uint8_t>(lroundf(G.color[i].B * 100));
     }
     config["effectBri"] = G.effectBri;
     config["effectSpeed"] = G.effectSpeed;
-    config["colortype"] = G.Colortype;
+    config["colortype"] = G.colorType;
     config["hasSpecialWordHappyBirthday"] =
         usedClockType->hasSpecialWordHappyBirthday();
     config["hasSecondsFrame"] = usedClockType->hasSecondsFrame();
@@ -436,7 +435,7 @@ void broadcastWebState() {
 
 //------------------------------------------------------------------------------
 
-void sendI2CScanResult(uint8_t client_nr, uint8_t sdaPin, uint8_t sclPin) {
+void sendI2CScanResult(uint8_t clientNr, uint8_t sdaPin, uint8_t sclPin) {
     DynamicJsonDocument config(384);
     config["command"] = "i2c-scan";
     config["sdaPin"] = sdaPin;
@@ -448,13 +447,13 @@ void sendI2CScanResult(uint8_t client_nr, uint8_t sdaPin, uint8_t sclPin) {
 
     if (result.status == i2cBus::ScanStatus::Invalid) {
         config["status"] = "invalid";
-        sendJsonToClient(client_nr, config);
+        sendJsonToClient(clientNr, config);
         return;
     }
 
     if (result.status == i2cBus::ScanStatus::Disabled) {
         config["status"] = "disabled";
-        sendJsonToClient(client_nr, config);
+        sendJsonToClient(clientNr, config);
         return;
     }
 
@@ -466,7 +465,7 @@ void sendI2CScanResult(uint8_t client_nr, uint8_t sdaPin, uint8_t sclPin) {
     }
 
     config["status"] = "ok";
-    sendJsonToClient(client_nr, config);
+    sendJsonToClient(clientNr, config);
 }
 
 } // namespace
@@ -827,7 +826,7 @@ void ClockWork::initBootShowIp(const char *buf) {
 
 void ClockWork::initBootLedBlink() {
     for (uint8_t row = 0; row < usedClockType->rowsWordMatrix(); row++) {
-        frontMatrix[row] ^= num32BitWithOnesAccordingToColumns();
+        frontMatrix[row] ^= allColumnsMask();
     }
     led.setbyFrontMatrix(Foreground);
     led.show();
@@ -951,7 +950,7 @@ void ClockWork::sendMqttValues() {
     config["command"] = "mqtt";
     config["MQTT_State"] = G.mqtt.state;
     config["MQTT_Port"] = G.mqtt.port;
-    config["MQTT_Server"] = G.mqtt.serverAdress;
+    config["MQTT_Server"] = G.mqtt.serverAddress;
     config["MQTT_User"] = G.mqtt.user;
 
     // don't expose password:
@@ -963,7 +962,7 @@ void ClockWork::sendMqttValues() {
     config["MQTT_Topic"] = G.mqtt.topic;
     config["MQTT_Status"] = mqtt.status();
 
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -986,15 +985,15 @@ void ClockWork::sendConfigValues() {
     config["h24"] = G.h24;
     for (uint8_t i = 0;
          i < sizeof(G.languageVariant) / sizeof(G.languageVariant[0]); i++) {
-        char string2Send[11];
-        sprintf(string2Send, "langVar%d", i);
-        config[string2Send] = static_cast<uint8_t>(G.languageVariant[i]);
+        char key[11];
+        sprintf(key, "langVar%d", i);
+        config[key] = static_cast<uint8_t>(G.languageVariant[i]);
     }
     for (uint8_t i = 0;
          i < sizeof(G.layoutVariant) / sizeof(G.layoutVariant[0]); i++) {
-        char string2Send[11];
-        sprintf(string2Send, "layVar%d", i);
-        config[string2Send] = static_cast<uint8_t>(G.layoutVariant[i]);
+        char key[11];
+        sprintf(key, "layVar%d", i);
+        config[key] = static_cast<uint8_t>(G.layoutVariant[i]);
     }
     config["effectBri"] = G.effectBri;
     config["itIsVariant"] = static_cast<uint8_t>(G.itIsVariant);
@@ -1002,13 +1001,13 @@ void ClockWork::sendConfigValues() {
     config["minuteVariant"] = static_cast<uint8_t>(G.minuteVariant);
     config["supportedMinuteVariants"] =
         usedClockType->supportedMinuteVariantMask();
-    config["cityid"] = G.openWeatherMap.cityid;
-    char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
-    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
+    config["cityid"] = G.openWeatherMap.cityId;
+    char apiKeyMasked[sizeof(G.openWeatherMap.apiKey) + 1] = {0};
+    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apiKey);
     config["apiKey"] = apiKeyMasked;
-    config["colortype"] = G.Colortype;
+    config["colortype"] = G.colorType;
     config["buildtype"] = static_cast<uint8_t>(G.buildTypeDef);
-    config["wType"] = static_cast<uint8_t>(G.wType);
+    config["wType"] = static_cast<uint8_t>(G.whiteType);
     config["clockTypeDef"] = G.clockTypeDef;
     config["bitmapSymbol"] = static_cast<uint8_t>(G.bitmapSymbol);
     config["bootLedBlink"] = G.bootLedBlink;
@@ -1036,7 +1035,7 @@ void ClockWork::sendConfigValues() {
     config["fireCooling"] = G.fireCooling;
     config["fireSparking"] = G.fireSparking;
 
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -1048,14 +1047,14 @@ void ClockWork::sendBirthdays() {
         usedClockType->hasSpecialWordHappyBirthday();
     for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
         char dateString[10];
-        char string2Send[16];
-        snprintf(string2Send, sizeof(string2Send), "birthdayDate%d", i);
+        char key[16];
+        snprintf(key, sizeof(key), "birthdayDate%d", i);
         snprintf(dateString, sizeof(dateString), "%02u-%02u",
                  G.birthday[i].month, G.birthday[i].day);
-        config[string2Send] = dateString;
+        config[key] = dateString;
     }
 
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -1063,7 +1062,7 @@ void ClockWork::sendBirthdays() {
 void ClockWork::sendColorValues() {
     DynamicJsonDocument config(768);
     fillColorValues(config);
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -1079,7 +1078,7 @@ void ClockWork::sendAutoBrightValues() {
     config["autoBrightGain"] = (uint8_t)ledGain;
     config["autoBrightSource"] = autoBrightUsingBH1750 ? "BH1750" : "LDR";
 
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -1087,7 +1086,7 @@ void ClockWork::sendAutoBrightValues() {
 void ClockWork::sendTransitionValues() {
     DynamicJsonDocument config(256);
     fillTransitionValues(config);
-    sendJsonToClient(G.client_nr, config);
+    sendJsonToClient(G.clientNr, config);
 }
 
 //------------------------------------------------------------------------------
@@ -1188,7 +1187,7 @@ void ClockWork::handleConfigCommand() {
         break;
 
     case COMMAND_REQUEST_I2C_SCAN: {
-        sendI2CScanResult(G.client_nr, i2cScanSdaPin, i2cScanSclPin);
+        sendI2CScanResult(G.clientNr, i2cScanSdaPin, i2cScanSclPin);
         break;
     }
 
@@ -1300,10 +1299,10 @@ void ClockWork::handleConfigCommand() {
         break;
 
     case COMMAND_SET_COLORTYPE: {
-        // G.param1 sets new Colortype
+        // G.param1 sets new colorType
         Serial.printf("LED Colortype: %u\n", G.param1);
 
-        G.Colortype = G.param1;
+        G.colorType = G.param1;
         eeprom::write();
 
         clearClockByProgInit();
@@ -1447,7 +1446,7 @@ void ClockWork::showColorMode() {
     if (G.progInit) {
         clearClockByProgInit();
         for (uint8_t row = 0; row < usedClockType->rowsWordMatrix(); row++) {
-            frontMatrix[row] = num32BitWithOnesAccordingToColumns();
+            frontMatrix[row] = allColumnsMask();
         }
     }
 
@@ -1559,7 +1558,7 @@ void ClockWork::loop(struct tm &tm) {
     handleConfigCommand();
 
     if (setCommandPending) {
-        initLedStrip(G.Colortype);
+        initLedStrip(G.colorType);
     }
 
     G.conf = COMMAND_IDLE;

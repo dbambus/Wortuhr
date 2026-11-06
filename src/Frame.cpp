@@ -16,11 +16,11 @@ SecondsFrame::~SecondsFrame() {}
 
 SecondsFrame::SecondsFrame(const uint8_t num) {
     numFramePixels = num;
-    frameIntervall = 60000 / numFramePixels;
+    frameInterval = 60000 / numFramePixels;
     lastSecondFrame = numFramePixels;
     // 0xFF cannot collide with a second, so the first loop() resyncs.
     lastSyncedSecond = 0xFF;
-    countMillisFrameIntervall = 0;
+    countMillisFrameInterval = 0;
     previousMillis = 0;
 }
 
@@ -36,7 +36,7 @@ bool SecondsFrame::checkIfFrameLoopShouldSkip() const {
 
 void SecondsFrame::updateMillisCounters() {
     unsigned long currentMillis = millis();
-    countMillisFrameIntervall += currentMillis - previousMillis;
+    countMillisFrameInterval += currentMillis - previousMillis;
     previousMillis = currentMillis;
 }
 
@@ -48,8 +48,8 @@ bool SecondsFrame::checkIfFrameInit() const {
 
 //------------------------------------------------------------------------------
 
-bool SecondsFrame::checkIftoRunFrameLogic() const {
-    return countMillisFrameIntervall >= frameIntervall;
+bool SecondsFrame::shouldRunFrameLogic() const {
+    return countMillisFrameInterval >= frameInterval;
 }
 
 //------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ void SecondsFrame::resyncToDisplayedTime() {
 
     _secondFrame = expected;
     lastSecondFrame = _secondFrame;
-    countMillisFrameIntervall = 0;
+    countMillisFrameInterval = 0;
     setInitFrameSector();
     updateLedsIfClockworkMode();
 }
@@ -187,7 +187,7 @@ void SecondsFrame::updateLedsIfClockworkMode() {
 //------------------------------------------------------------------------------
 
 void SecondsFrame::frameLogic() {
-    countMillisFrameIntervall -= frameIntervall;
+    countMillisFrameInterval -= frameInterval;
     _secondFrame++;
 
     if (isFullMinute()) {
@@ -223,7 +223,7 @@ void SecondsFrame::loop() {
 
     resyncToDisplayedTime();
 
-    if (checkIftoRunFrameLogic()) {
+    if (shouldRunFrameLogic()) {
         frameLogic();
     }
 }

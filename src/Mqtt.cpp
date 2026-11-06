@@ -31,10 +31,10 @@ extern WiFiClient client;
 
 #define HOMEASSISTANT_DISCOVERY_TOPIC "homeassistant"
 
-#define RETRY_INTERVALL_WITHIN_5_MINUTES 15000 // 15 Seconds
+#define RETRY_INTERVAL_WITHIN_5_MINUTES 15000 // 15 Seconds
 #define MAX_RETRIES_WITHIN_5_MINUTES 20
 
-#define RETRY_INTERVALL 3600000 // 1 Hour
+#define RETRY_INTERVAL 3600000 // 1 Hour
 
 // Static PubSubClient callbacks need a way back to the single Mqtt instance.
 Mqtt *mqttInstance = nullptr;
@@ -90,10 +90,10 @@ static bool connectToBroker() {
 
     IPAddress brokerIp;
 #ifdef ESP8266
-    const int resolved =
-        WiFi.hostByName(G.mqtt.serverAdress, brokerIp, MQTT_CONNECT_TIMEOUT_MS);
+    const int resolved = WiFi.hostByName(G.mqtt.serverAddress, brokerIp,
+                                         MQTT_CONNECT_TIMEOUT_MS);
 #else
-    const int resolved = WiFi.hostByName(G.mqtt.serverAdress, brokerIp);
+    const int resolved = WiFi.hostByName(G.mqtt.serverAddress, brokerIp);
 #endif
     if (resolved != 1) {
         Serial.println("MQTT: DNS lookup for broker failed");
@@ -568,7 +568,7 @@ None
 */
 
 void Mqtt::init() {
-    mqttClient.setServer(G.mqtt.serverAdress, G.mqtt.port);
+    mqttClient.setServer(G.mqtt.serverAddress, G.mqtt.port);
     mqttClient.setCallback(callback);
 
     // Configure LWT (Last Will and Testament)
@@ -647,9 +647,9 @@ None
 void Mqtt::reInit() {
     static uint8_t retryCount = 0;
     static uint32_t lastRetryTime = 0;
-    static uint32_t retryIntervall = RETRY_INTERVALL_WITHIN_5_MINUTES;
+    static uint32_t retryInterval = RETRY_INTERVAL_WITHIN_5_MINUTES;
 
-    if (millis() - lastRetryTime >= retryIntervall) {
+    if (millis() - lastRetryTime >= retryInterval) {
         retryCount++;
         Serial.print("Reconnecting to MQTT Server. Try ");
         Serial.println(retryCount);
@@ -659,13 +659,13 @@ void Mqtt::reInit() {
 
         if (retryCount >= MAX_RETRIES_WITHIN_5_MINUTES) {
             Serial.println("Switched to hourly MQTT connect retry");
-            retryIntervall = RETRY_INTERVALL;
+            retryInterval = RETRY_INTERVAL;
             retryCount = 0;
         }
 
         if (isConnected()) {
             retryCount = 0;
-            retryIntervall = RETRY_INTERVALL_WITHIN_5_MINUTES;
+            retryInterval = RETRY_INTERVAL_WITHIN_5_MINUTES;
         }
     }
 }
@@ -690,7 +690,7 @@ false if the MQTT client is not connected to the broker.
 bool Mqtt::isConnected() { return mqttClient.connected(); }
 
 const char *Mqtt::status() {
-    if (!G.mqtt.state || G.mqtt.serverAdress[0] == '\0') {
+    if (!G.mqtt.state || G.mqtt.serverAddress[0] == '\0') {
         return "not-configured";
     }
     if (isConnected()) {

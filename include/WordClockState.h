@@ -63,7 +63,7 @@
 
 struct MqttData {
     bool state;
-    char serverAdress[PAYLOAD_LENGTH];
+    char serverAddress[PAYLOAD_LENGTH];
     char user[PAYLOAD_LENGTH];
     char password[PAYLOAD_LENGTH];
     char clientId[PAYLOAD_LENGTH];
@@ -133,15 +133,15 @@ struct HardwarePins {
 };
 
 struct OpenWeatherMapData {
-    char apikey[35];
-    char cityid[9];
+    char apiKey[35];
+    char cityId[9];
 };
 
 enum class BuildTypeDef : uint8_t {
     Normal = 0,
     DoubleResM1 = 1,
     DoubleRes = 2,
-    TrippleRes = 3,
+    TripleRes = 3,
     QuadRes = 4,
 };
 
@@ -153,7 +153,7 @@ inline uint8_t getLedsPerLetter(BuildTypeDef buildTypeDef) {
     switch (buildTypeDef) {
     case BuildTypeDef::DoubleRes:
         return 2;
-    case BuildTypeDef::TrippleRes:
+    case BuildTypeDef::TripleRes:
         return 3;
     case BuildTypeDef::QuadRes:
         return 4;
@@ -242,7 +242,7 @@ enum ColorPosition : uint8_t {
 };
 
 struct GLOBAL {
-    uint16_t sernr;
+    uint16_t serialNumber;
     uint16_t prog;
     uint8_t param1;
     bool progInit;
@@ -250,7 +250,7 @@ struct GLOBAL {
     HsbColor color[ColorPositionCount];
     uint8_t effectBri;
     uint8_t effectSpeed;
-    uint8_t client_nr;
+    uint8_t clientNr;
     SecondVariant secondVariant;
     uint8_t secondsFrameLedCount;
     MinuteVariant minuteVariant;
@@ -272,8 +272,8 @@ struct GLOBAL {
 
     uint8_t clockTypeDef;
     BuildTypeDef buildTypeDef;
-    uint8_t Colortype;
-    WhiteType wType;
+    uint8_t colorType;
+    WhiteType whiteType;
     BitmapSymbol bitmapSymbol;
 
     MqttData mqtt;

@@ -453,7 +453,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             G.mqtt.state = newState;
             G.mqtt.port = split(payload, length, 6, 5);
             size_t index_start = MQTT_TEXT_START;
-            payloadTextHandling(payload, length, G.mqtt.serverAdress,
+            payloadTextHandling(payload, length, G.mqtt.serverAddress,
                                 index_start);
             index_start += PAYLOAD_LENGTH;
             payloadTextHandling(payload, length, G.mqtt.user, index_start);
@@ -538,7 +538,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             } else {
                 Serial.printf("Ignoring invalid color type: %lu\n",
                               static_cast<unsigned long>(colorType));
-                G.param1 = G.Colortype;
+                G.param1 = G.colorType;
             }
             break;
         }
@@ -564,7 +564,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
         case COMMAND_SET_WHITETYPE: {
             const uint32_t whiteType = split(payload, length, 3);
             if (whiteTypeIsValid(whiteType)) {
-                G.wType = static_cast<WhiteType>(whiteType);
+                G.whiteType = static_cast<WhiteType>(whiteType);
             } else {
                 Serial.printf("Ignoring invalid white type: %lu\n",
                               static_cast<unsigned long>(whiteType));
@@ -592,14 +592,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             uint8_t ii = 0;
             size_t cityEnd = 3;
             while (cityEnd < length && payload[cityEnd] != ' ') {
-                if (ii < sizeof(G.openWeatherMap.cityid) - 1) {
-                    G.openWeatherMap.cityid[ii++] = payload[cityEnd];
+                if (ii < sizeof(G.openWeatherMap.cityId) - 1) {
+                    G.openWeatherMap.cityId[ii++] = payload[cityEnd];
                 }
                 cityEnd++;
             }
-            G.openWeatherMap.cityid[ii] = '\0';
+            G.openWeatherMap.cityId[ii] = '\0';
 
-            char submittedApiKey[sizeof(G.openWeatherMap.apikey)] = {0};
+            char submittedApiKey[sizeof(G.openWeatherMap.apiKey)] = {0};
             uint8_t jj = 0;
             const size_t apiKeyStart = cityEnd + 1;
             if (length > apiKeyStart) {
@@ -612,18 +612,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                 }
                 submittedApiKey[jj] = '\0';
                 if (!sensitive::matchesMaskedValue(submittedApiKey,
-                                                   G.openWeatherMap.apikey)) {
-                    sensitive::copyBoundedString(G.openWeatherMap.apikey,
+                                                   G.openWeatherMap.apiKey)) {
+                    sensitive::copyBoundedString(G.openWeatherMap.apiKey,
                                                  submittedApiKey);
                 }
             }
             Serial.println("write EEPROM!");
             Serial.print("CityID : ");
-            Serial.println(G.openWeatherMap.cityid);
+            Serial.println(G.openWeatherMap.cityId);
             Serial.print("APIkey : ");
-            char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
+            char apiKeyMasked[sizeof(G.openWeatherMap.apiKey) + 1] = {0};
             sensitive::maskPreservingSuffix(apiKeyMasked,
-                                            G.openWeatherMap.apikey);
+                                            G.openWeatherMap.apiKey);
             Serial.println(apiKeyMasked);
             break;
         }
@@ -669,7 +669,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             //------------------------------------------------------------------------------
 
         case COMMAND_REQUEST_I2C_SCAN: {
-            G.client_nr = num;
+            G.clientNr = num;
             i2cScanSdaPin = split(payload, length, 3);
             i2cScanSclPin = split(payload, length, 6);
             break;
@@ -683,7 +683,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
         case COMMAND_REQUEST_COLOR_VALUES:
         case COMMAND_REQUEST_TRANSITION:
         case COMMAND_REQUEST_AUTO_BRIGHT: {
-            G.client_nr = num;
+            G.clientNr = num;
             break;
         }
 

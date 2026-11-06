@@ -25,7 +25,7 @@ private:
     void increaseHardwareButtonBrightness();
     void nextHardwareButtonHue();
     void requestHardwareButtonDisplayRefresh();
-    uint32_t num32BitWithOnesAccordingToColumns();
+    uint32_t allColumnsMask();
     void reallocateSecondsFrame();
 
     //------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ private:
     void displayStaticScrollingText(const char *buf,
                                     const StaticScrollingText &info);
     void scrollingText(const char *buf);
-    void displaySymbols(BitmapSymbol bitmapSymbolnum);
+    void displaySymbols(BitmapSymbol bitmapSymbol);
     void countdownToMidnight();
 
     //------------------------------------------------------------------------------

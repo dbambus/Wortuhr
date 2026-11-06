@@ -5,10 +5,10 @@
 class SecondsFrame {
 private:
     uint8_t numFramePixels;
-    uint16_t frameIntervall;
+    uint16_t frameInterval;
     uint8_t lastSecondFrame;
     uint8_t lastSyncedSecond;
-    uint16_t countMillisFrameIntervall;
+    uint16_t countMillisFrameInterval;
     uint16_t previousMillis;
 
 private:
@@ -17,7 +17,7 @@ private:
     bool checkIfFrameLoopShouldSkip() const;
     void updateMillisCounters();
     bool checkIfFrameInit() const;
-    bool checkIftoRunFrameLogic() const;
+    bool shouldRunFrameLogic() const;
     uint16_t calcCurrentSecondFrameVariable();
     void resyncToDisplayedTime();
     void handleFrameSectorToggle();

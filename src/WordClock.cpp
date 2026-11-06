@@ -422,13 +422,13 @@ void ensureItIsVariant() {
 //------------------------------------------------------------------------------
 
 void ensureColorType() {
-    if (colorTypeIsValid(G.Colortype)) {
+    if (colorTypeIsValid(G.colorType)) {
         return;
     }
 
     Serial.printf("Invalid color type %u in EEPROM, restoring default\n",
-                  G.Colortype);
-    G.Colortype = DEFAULT_LEDTYPE;
+                  G.colorType);
+    G.colorType = DEFAULT_LEDTYPE;
 }
 
 //------------------------------------------------------------------------------
@@ -446,13 +446,13 @@ void ensureBuildType() {
 //------------------------------------------------------------------------------
 
 void ensureWhiteType() {
-    if (whiteTypeIsValid(static_cast<uint32_t>(G.wType))) {
+    if (whiteTypeIsValid(static_cast<uint32_t>(G.whiteType))) {
         return;
     }
 
     Serial.printf("Invalid white type %u in EEPROM, restoring default\n",
-                  static_cast<unsigned>(G.wType));
-    G.wType = WHITE_LEDTYPE;
+                  static_cast<unsigned>(G.whiteType));
+    G.whiteType = WHITE_LEDTYPE;
 }
 
 //------------------------------------------------------------------------------
@@ -472,20 +472,20 @@ void ensureMinuteLedCount() {
 
 void ensureWeatherData() {
 #ifdef OWM_CITY_ID
-    static_assert(sizeof(OWM_CITY_ID) <= sizeof(G.openWeatherMap.cityid),
+    static_assert(sizeof(OWM_CITY_ID) <= sizeof(G.openWeatherMap.cityId),
                   "OWM_CITY_ID is too long");
-    if (G.openWeatherMap.cityid[0] == '\0') {
-        strlcpy(G.openWeatherMap.cityid, OWM_CITY_ID,
-                sizeof(G.openWeatherMap.cityid));
+    if (G.openWeatherMap.cityId[0] == '\0') {
+        strlcpy(G.openWeatherMap.cityId, OWM_CITY_ID,
+                sizeof(G.openWeatherMap.cityId));
         Serial.println("No OpenWeatherMap city ID in EEPROM, using Config.h");
     }
 #endif
 #ifdef OWM_API_KEY
-    static_assert(sizeof(OWM_API_KEY) <= sizeof(G.openWeatherMap.apikey),
+    static_assert(sizeof(OWM_API_KEY) <= sizeof(G.openWeatherMap.apiKey),
                   "OWM_API_KEY is too long");
-    if (G.openWeatherMap.apikey[0] == '\0') {
-        strlcpy(G.openWeatherMap.apikey, OWM_API_KEY,
-                sizeof(G.openWeatherMap.apikey));
+    if (G.openWeatherMap.apiKey[0] == '\0') {
+        strlcpy(G.openWeatherMap.apiKey, OWM_API_KEY,
+                sizeof(G.openWeatherMap.apiKey));
         Serial.println("No OpenWeatherMap API key in EEPROM, using Config.h");
     }
 #endif
@@ -553,7 +553,7 @@ void handlePowerCycleCount() {
         Serial.println("Enable captive portal");
         network.startConfigPortal();
     } else if (powerCycleCount == FACTORY_RESET_POWER_CYCLE_COUNT) {
-        G.sernr++;
+        G.serialNumber++;
         Serial.println("Reset to initial values");
     }
 }
@@ -570,10 +570,10 @@ void resetPowerCycleCount() {
 
 void setDefaultMqttSettings() {
 #ifdef MQTT_SERVER
-    strlcpy(G.mqtt.serverAdress, MQTT_SERVER, sizeof(G.mqtt.serverAdress));
+    strlcpy(G.mqtt.serverAddress, MQTT_SERVER, sizeof(G.mqtt.serverAddress));
     G.mqtt.state = true;
 #else
-    strcpy(G.mqtt.serverAdress, "192.168.4.1");
+    strcpy(G.mqtt.serverAddress, "192.168.4.1");
     G.mqtt.state = false;
 #endif
 
@@ -616,7 +616,7 @@ void restoreFactoryDefaults() {
     }
     EEPROM.commit();
 
-    G.sernr = SERNR;
+    G.serialNumber = SERNR;
     G.prog = COMMAND_MODE_WORD_CLOCK;
     G.param1 = 0;
     G.progInit = true;
@@ -633,14 +633,14 @@ void restoreFactoryDefaults() {
     G.effectSpeed = EFFECT_SPEED_DEFAULT;
     G.fireCooling = FIRE_COOLING_DEFAULT;
     G.fireSparking = FIRE_SPARKING_DEFAULT;
-    G.client_nr = 0;
+    G.clientNr = 0;
     G.secondVariant = SecondVariant::Off;
     G.secondsFrameLedCount = 0;
     G.bitmapSymbol = BitmapSymbol::HEART;
     G.minuteVariant = defaultMinuteVariant();
     G.minuteLedCount = minuteLedCountFor(G.minuteVariant, MINUTE_LEDS_WIRED_4);
-    strcpy(G.openWeatherMap.cityid, "");
-    strcpy(G.openWeatherMap.apikey, "");
+    strcpy(G.openWeatherMap.cityId, "");
+    strcpy(G.openWeatherMap.apiKey, "");
     strcpy(G.timeserver, "europe.pool.ntp.org");
     strlcpy(G.timezone, TZ_Europe_Berlin, sizeof(G.timezone));
     strcpy(G.hostname, "ESPWordclock");
@@ -670,8 +670,8 @@ void restoreFactoryDefaults() {
     usedClockType = clockTypeFor(G.clockTypeDef);
     clockWork.checkForValidLanguageVariant();
     G.buildTypeDef = DEFAULT_BUILDTYPE;
-    G.Colortype = DEFAULT_LEDTYPE;
-    G.wType = WHITE_LEDTYPE;
+    G.colorType = DEFAULT_LEDTYPE;
+    G.whiteType = WHITE_LEDTYPE;
 
     G.bootLedBlink = false;
     G.bootLedSweep = BOOT_LEDSWEEP;
@@ -749,7 +749,7 @@ void initClockType() {
 
 void initLeds() {
     Serial.println("LED Init");
-    clockWork.initLedStrip(G.Colortype);
+    clockWork.initLedStrip(G.colorType);
     if (G.bootLedBlink) {
         clockWork.initBootLedBlink();
         delay(20);
@@ -897,7 +897,7 @@ void setup() {
     setupConfigPortal();
     handlePowerCycleCount();
 
-    if (G.sernr != SERNR) {
+    if (G.serialNumber != SERNR) {
         restoreFactoryDefaults();
     }
 

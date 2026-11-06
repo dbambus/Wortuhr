@@ -30,14 +30,14 @@ void printMaskedPassword() {
 }
 
 void printMaskedOpenWeatherMapApiKey() {
-    char apiKeyMasked[sizeof(G.openWeatherMap.apikey) + 1] = {0};
-    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apikey);
+    char apiKeyMasked[sizeof(G.openWeatherMap.apiKey) + 1] = {0};
+    sensitive::maskPreservingSuffix(apiKeyMasked, G.openWeatherMap.apiKey);
     Serial.printf("OWM_apikey (masked): %s\n", apiKeyMasked);
 }
 
 void printConfig() {
     Serial.printf("Version   : %s\n", VERSION);
-    Serial.printf("Sernr     : %u\n", G.sernr);
+    Serial.printf("Sernr     : %u\n", G.serialNumber);
     Serial.printf("Programm  : %u\n", G.prog);
     Serial.printf("Conf      : %u\n", G.conf);
     Serial.printf("FgCol.H   : %f\n", G.color[Foreground].H);
@@ -63,7 +63,7 @@ void printConfig() {
     Serial.printf("ClockType    : %u\n", G.clockTypeDef);
 
     Serial.printf("MQTT_State    : %u\n", G.mqtt.state);
-    printSafeString("MQTT_Server    : ", G.mqtt.serverAdress);
+    printSafeString("MQTT_Server    : ", G.mqtt.serverAddress);
     printSafeString("MQTT_User    : ", G.mqtt.user);
     printMaskedPassword();
     printSafeString("MQTT_ClientId    : ", G.mqtt.clientId);
@@ -89,9 +89,9 @@ void printConfig() {
     Serial.printf("speedButtonPin    : %u\n", G.hardwarePins.speedButton);
     Serial.printf("i2cSdaPin    : %u\n", G.i2cSdaPin);
     Serial.printf("i2cSclPin    : %u\n", G.i2cSclPin);
-    Serial.printf("Colortype    : %u\n", G.Colortype);
+    Serial.printf("Colortype    : %u\n", G.colorType);
     printMaskedOpenWeatherMapApiKey();
-    printSafeString("OWM_city  : ", G.openWeatherMap.cityid);
+    printSafeString("OWM_city  : ", G.openWeatherMap.cityId);
 
     for (uint8_t i = 0; i < MAX_BIRTHDAY_COUNT; i++) {
         Serial.printf("Birthday%1u: %02u.%02u\n", i, G.birthday[i].day,

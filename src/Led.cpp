@@ -24,9 +24,9 @@ const uint8_t whiteAdjR[3] = {255, 255, 255};
 const uint8_t whiteAdjG[3] = {180, 215, 107};
 const uint8_t whiteAdjB[3] = {107, 177, 253};
 
-RgbwColor convertRgbToRgbw(RgbColor light, WhiteType wType) {
+RgbwColor convertRgbToRgbw(RgbColor light, WhiteType whiteType) {
     RgbwColor returnColor;
-    uint8_t wIdx = static_cast<uint8_t>(wType);
+    uint8_t wIdx = static_cast<uint8_t>(whiteType);
 
     // Use fast 32-bit integer math! (255 * 255 = 65025, easily fits in
     // uint32_t)
@@ -258,9 +258,9 @@ void Led::setState(const bool newState) {
 //------------------------------------------------------------------------------
 
 void Led::setPixel(uint16_t ledIndex, HsbColor color) {
-    if (G.Colortype == Grbw) {
+    if (G.colorType == Grbw) {
         activeLedStrip->setRgbwPixel(
-            ledIndex, convertRgbToRgbw(RgbColor(color), G.wType));
+            ledIndex, convertRgbToRgbw(RgbColor(color), G.whiteType));
     } else {
         activeLedStrip->setRgbPixel(ledIndex, color);
     }
