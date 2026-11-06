@@ -1165,44 +1165,188 @@ void ClockWork::applySecondsFrame() {
 
 //------------------------------------------------------------------------------
 
+void ClockWork::restart() {
+    delay(500);
+    ESP.restart();
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendI2CScan() {
+    sendI2CScanResult(G.clientNr, i2cScanSdaPin, i2cScanSclPin);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::saveSettings() {
+    eeprom::write();
+    delay(100);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyTimezoneSetting() {
+    applyTimezone();
+    eeprom::write();
+    parametersChanged = true;
+    delay(100);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyBuildType() {
+    led.clear();
+
+    // G.param1 sets new buildtype
+    Serial.printf("Clock Buildtype: %u\n", G.param1);
+
+    G.buildTypeDef = static_cast<BuildTypeDef>(G.param1);
+    eeprom::write();
+    led.clear();
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyMinuteSetting() {
+    led.clear();
+    normalizeMinuteVariant();
+    eeprom::write();
+    memset(frameArray, false, sizeof(frameArray));
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyBrightness() {
+    if (G.param1) {
+        eeprom::write();
+    }
+    led.clear();
+    memset(frameArray, false, sizeof(frameArray));
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::saveAndRedraw() {
+    eeprom::write();
+    led.clear();
+    memset(frameArray, false, sizeof(frameArray));
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::saveAndRestartMode() {
+    eeprom::write();
+    led.clear();
+    G.progInit = true;
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyMqttSettings() {
+    if (G.mqtt.state && G.progInit) {
+        mqtt.init();
+        G.progInit = false;
+    }
+    delay(100);
+
+    eeprom::write();
+    mqtt.notifyStatus();
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::sendMqttDiscovery() { mqtt.sendDiscovery(); }
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyColorType() {
+    // G.param1 sets new colorType
+    Serial.printf("LED Colortype: %u\n", G.param1);
+
+    G.colorType = G.param1;
+    eeprom::write();
+
+    clearClockByProgInit();
+    parametersChanged = true;
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::saveFireSettings() {
+    if (G.param1) {
+        eeprom::write();
+        Serial.printf("Fire: cooling %u, sparking %u\n", G.fireCooling,
+                      G.fireSparking);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::saveEffectSpeed() {
+    if (G.param1) {
+        eeprom::write();
+        Serial.printf("Effect speed: %u\n", G.effectSpeed);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::applyHostname() {
+    Serial.print("Hostname: ");
+    Serial.println(G.hostname);
+    eeprom::write();
+    network.changeHostname(G.hostname);
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::disableWifi() {
+    eeprom::write();
+    delay(100);
+    Serial.println("Conf: WLAN off");
+    network.disable();
+}
+
+//------------------------------------------------------------------------------
+
+void ClockWork::resetWifi() {
+    Serial.println("Conf: new Wifi Config");
+    network.resetSettings();
+}
+
+//------------------------------------------------------------------------------
+
 void ClockWork::handleConfigCommand() {
     switch (G.conf) {
-
-    case COMMAND_RESET: {
-        delay(500);
-        ESP.restart();
+    case COMMAND_RESET:
+        restart();
         break;
-    }
-
     case COMMAND_REQUEST_MQTT_VALUES:
         sendMqttValues();
         break;
-
     case COMMAND_REQUEST_CONFIG_VALUES:
         sendConfigValues();
         break;
-
     case COMMAND_REQUEST_BIRTHDAYS:
         sendBirthdays();
         break;
-
-    case COMMAND_REQUEST_I2C_SCAN: {
-        sendI2CScanResult(G.clientNr, i2cScanSdaPin, i2cScanSclPin);
+    case COMMAND_REQUEST_I2C_SCAN:
+        sendI2CScan();
         break;
-    }
-
     case COMMAND_REQUEST_COLOR_VALUES:
         sendColorValues();
         break;
-
     case COMMAND_REQUEST_AUTO_BRIGHT:
         sendAutoBrightValues();
         break;
-
     case COMMAND_REQUEST_TRANSITION:
         sendTransitionValues();
         break;
-
     case COMMAND_SET_BIRTHDAYS:
     case COMMAND_SET_TIME:
     case COMMAND_SET_INITIAL_VALUES:
@@ -1210,153 +1354,66 @@ void ClockWork::handleConfigCommand() {
     case COMMAND_SET_SCROLLINGTEXT:
     case COMMAND_SET_TIMESERVER:
     case COMMAND_SET_SYMBOL:
-    case COMMAND_SET_BOOT: {
-        eeprom::write();
-        delay(100);
+    case COMMAND_SET_BOOT:
+        saveSettings();
         break;
-    }
-
-    case COMMAND_SET_TIMEZONE: {
-        applyTimezone();
-        eeprom::write();
-        parametersChanged = true;
-        delay(100);
-        break;
-    }
-
-    case COMMAND_SET_BUILDTYPE: {
-        led.clear();
-
-        // G.param1 sets new buildtype
-        Serial.printf("Clock Buildtype: %u\n", G.param1);
-
-        G.buildTypeDef = static_cast<BuildTypeDef>(G.param1);
-        eeprom::write();
-        led.clear();
-        parametersChanged = true;
-        break;
-    }
-
-    case COMMAND_SET_MINUTE:
-        led.clear();
-        normalizeMinuteVariant();
-        eeprom::write();
-        memset(frameArray, false, sizeof(frameArray));
-        parametersChanged = true;
-        break;
-
-    case COMMAND_SET_BRIGHTNESS: {
-        if (G.param1) {
-            eeprom::write();
-        }
-        led.clear();
-        memset(frameArray, false, sizeof(frameArray));
-        parametersChanged = true;
-        break;
-    }
-
     case COMMAND_SET_AUTO_BRIGHT:
     case COMMAND_SET_WHITETYPE:
     case COMMAND_SET_TIME_MANUAL:
-    case COMMAND_SET_LAYOUT_VARIANT: {
-        eeprom::write();
-        led.clear();
-        memset(frameArray, false, sizeof(frameArray));
-        parametersChanged = true;
+    case COMMAND_SET_LAYOUT_VARIANT:
+        saveAndRedraw();
         break;
-    }
-
     case COMMAND_SET_COLORIZE:
     case COMMAND_SET_LANGUAGE_VARIANT:
     case COMMAND_SET_IT_IS_VARIANT:
-    case COMMAND_SET_SETTING_SECOND: {
-        eeprom::write();
-        led.clear();
-        G.progInit = true;
-        parametersChanged = true;
+    case COMMAND_SET_SETTING_SECOND:
+        saveAndRestartMode();
         break;
-    }
-
-    case COMMAND_SET_MQTT: {
-        if (G.mqtt.state && G.progInit) {
-            mqtt.init();
-            G.progInit = false;
-        }
-        delay(100);
-
-        eeprom::write();
-        mqtt.notifyStatus();
+    case COMMAND_SET_TIMEZONE:
+        applyTimezoneSetting();
         break;
-    }
-
-    case COMMAND_SET_MQTT_HA_DISCOVERY: {
-        mqtt.sendDiscovery();
+    case COMMAND_SET_BUILDTYPE:
+        applyBuildType();
         break;
-    }
-
+    case COMMAND_SET_MINUTE:
+        applyMinuteSetting();
+        break;
+    case COMMAND_SET_BRIGHTNESS:
+        applyBrightness();
+        break;
+    case COMMAND_SET_MQTT:
+        applyMqttSettings();
+        break;
+    case COMMAND_SET_MQTT_HA_DISCOVERY:
+        sendMqttDiscovery();
+        break;
     case COMMAND_SET_HARDWARE_PINS:
         applyHardwarePins();
         break;
-
-    case COMMAND_SET_COLORTYPE: {
-        // G.param1 sets new colorType
-        Serial.printf("LED Colortype: %u\n", G.param1);
-
-        G.colorType = G.param1;
-        eeprom::write();
-
-        clearClockByProgInit();
-        parametersChanged = true;
+    case COMMAND_SET_COLORTYPE:
+        applyColorType();
         break;
-    }
-
     case COMMAND_SET_CLOCK_TYPE:
         applyClockType();
         break;
-
     case COMMAND_SET_SECONDS_FRAME:
         applySecondsFrame();
         break;
-
-    case COMMAND_SET_FIRE: {
-        if (G.param1) {
-            eeprom::write();
-            Serial.printf("Fire: cooling %u, sparking %u\n", G.fireCooling,
-                          G.fireSparking);
-        }
+    case COMMAND_SET_FIRE:
+        saveFireSettings();
         break;
-    }
-
-    case COMMAND_SPEED: {
-        if (G.param1) {
-            eeprom::write();
-            Serial.printf("Effect speed: %u\n", G.effectSpeed);
-        }
+    case COMMAND_SPEED:
+        saveEffectSpeed();
         break;
-    }
-
-    case COMMAND_SET_HOSTNAME: {
-        Serial.print("Hostname: ");
-        Serial.println(G.hostname);
-        eeprom::write();
-        network.changeHostname(G.hostname);
+    case COMMAND_SET_HOSTNAME:
+        applyHostname();
         break;
-    }
-
-    case COMMAND_SET_WIFI_DISABLED: {
-        eeprom::write();
-        delay(100);
-        Serial.println("Conf: WLAN off");
-        network.disable();
+    case COMMAND_SET_WIFI_DISABLED:
+        disableWifi();
         break;
-    }
-
-    case COMMAND_SET_WIFI_AND_RESTART: {
-        Serial.println("Conf: new Wifi Config");
-        network.resetSettings();
+    case COMMAND_SET_WIFI_AND_RESTART:
+        resetWifi();
         break;
-    }
-
     default:
         break;
     }
