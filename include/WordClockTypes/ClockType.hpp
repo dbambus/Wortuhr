@@ -20,6 +20,13 @@ enum class LanguageAbbreviation {
     TR
 };
 
+enum class HalfHourPhrase : uint8_t {
+    HalfToNextHour,
+    HalfPastCurrentHour,
+    CurrentHourAndHalf,
+    CurrentHourBaseFormAndHalf,
+};
+
 class ClockType {
 public:
     virtual void setFrontMatrixWord(const uint8_t row, const uint8_t colStart,
@@ -169,6 +176,22 @@ public:
     virtual bool hasFiftyFive() { return false; }
 
     virtual bool hasMitternacht() { return false; }
+
+    // --- Phrasing ---
+
+    virtual HalfHourPhrase halfHourPhrase() {
+        return HalfHourPhrase::HalfToNextHour;
+    }
+
+    virtual bool usesPastWordForMinutes() { return true; }
+
+    virtual bool namesCurrentHourAfterHalf() { return false; }
+
+    virtual bool alwaysNamesCurrentHour() { return false; }
+
+    virtual FrontWord itIsWord(uint8_t hour, uint8_t minute) {
+        return FrontWord::es_ist;
+    }
 
     // --- Layout & Mode Capabilities ---
 

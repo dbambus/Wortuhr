@@ -27,6 +27,31 @@ public:
 
     //------------------------------------------------------------------------------
 
+    virtual HalfHourPhrase halfHourPhrase() override {
+        return HalfHourPhrase::CurrentHourAndHalf;
+    }
+
+    //------------------------------------------------------------------------------
+
+    virtual bool alwaysNamesCurrentHour() override { return true; }
+
+    //------------------------------------------------------------------------------
+
+    virtual FrontWord itIsWord(uint8_t hour, uint8_t minute) override {
+        switch (hour) {
+        case 1:
+            return FrontWord::es_ist__singular__;
+        case 2:
+        case 3:
+        case 4:
+            return FrontWord::es_ist___plural___;
+        default:
+            return FrontWord::es_ist;
+        }
+    }
+
+    //------------------------------------------------------------------------------
+
     virtual bool hasTwenty() override { return true; }
 
     //------------------------------------------------------------------------------

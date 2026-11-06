@@ -25,6 +25,12 @@ public:
 
     //------------------------------------------------------------------------------
 
+    virtual HalfHourPhrase halfHourPhrase() override {
+        return HalfHourPhrase::HalfPastCurrentHour;
+    }
+
+    //------------------------------------------------------------------------------
+
     virtual uint8_t rowsWordMatrix() override { return 8; };
 
     //------------------------------------------------------------------------------

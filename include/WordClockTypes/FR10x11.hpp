@@ -27,6 +27,16 @@ public:
 
     //------------------------------------------------------------------------------
 
+    virtual HalfHourPhrase halfHourPhrase() override {
+        return HalfHourPhrase::CurrentHourAndHalf;
+    }
+
+    //------------------------------------------------------------------------------
+
+    virtual bool usesPastWordForMinutes() override { return false; }
+
+    //------------------------------------------------------------------------------
+
     virtual bool hasTwenty() override { return true; }
 
     //------------------------------------------------------------------------------

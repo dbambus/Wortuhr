@@ -27,6 +27,12 @@ public:
 
     //------------------------------------------------------------------------------
 
+    virtual HalfHourPhrase halfHourPhrase() override {
+        return HalfHourPhrase::HalfPastCurrentHour;
+    }
+
+    //------------------------------------------------------------------------------
+
     virtual bool isRomanLanguage() override { return true; }
 
     //------------------------------------------------------------------------------

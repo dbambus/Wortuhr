@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClockFace.h"
 #include "HardwareButtonController.h"
 #include <NeoPixelBus.h>
 
@@ -9,6 +10,7 @@ private:
     uint32_t previousMillis = 0;
     uint32_t lux = 0;
     HardwareButtonController hardwareButtonController;
+    ClockFace clockFace;
 
 private:
     //------------------------------------------------------------------------------
@@ -49,37 +51,11 @@ private:
     void countdownToMidnight();
 
     //------------------------------------------------------------------------------
-    // Minute Functions
-    //------------------------------------------------------------------------------
-    void showSpecialWordBeen(const uint8_t min);
-    void showMinuteInWords(uint8_t min);
-    bool checkIfClockHasMinuteInWordsAndItIsSet();
-    void showMinute(uint8_t min);
-    FrontWord getFrontWordForNum(uint8_t min);
-    bool checkTwentyUsage();
-    bool hasTwentyAndCheckForUsage();
-    bool hasDreiviertelAndCheckForUsage();
-    void showQuarterPast(uint8_t &offsetHour);
-    void showQuarterTo(uint8_t &offsetHour);
-    void setMinute(uint8_t min, uint8_t &offsetHour, bool &fullHour);
-
-    //------------------------------------------------------------------------------
-    // Hour Functions
-    //------------------------------------------------------------------------------
-    void setHour(uint8_t std, const bool fullHour);
-
-    //------------------------------------------------------------------------------
     // Loop Helper Functions
     //------------------------------------------------------------------------------
 
-    bool isMidnight(const uint8_t hour);
     WordclockChanges changesInClockface();
     void calcClockface();
-    void setClock();
-    void setDaytimeWords(uint8_t hour);
-    void setItIs(uint8_t min, const uint8_t offsetHour);
-    bool DetermineIfItIsIsShown(const uint8_t min);
-    void DetermineWhichItIsToShow(uint8_t offsetHour, uint8_t min);
     void clearClockByProgInit();
     void loopEverySecond(struct tm &tm);
     void loopEveryMinute();

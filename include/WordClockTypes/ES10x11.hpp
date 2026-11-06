@@ -27,6 +27,21 @@ public:
 
     //------------------------------------------------------------------------------
 
+    virtual HalfHourPhrase halfHourPhrase() override {
+        return HalfHourPhrase::HalfPastCurrentHour;
+    }
+
+    //------------------------------------------------------------------------------
+
+    virtual FrontWord itIsWord(uint8_t hour, uint8_t minute) override {
+        if ((hour == 1 && minute < 35) || (hour == 0 && minute > 34)) {
+            return FrontWord::es_ist___plural___;
+        }
+        return FrontWord::es_ist;
+    }
+
+    //------------------------------------------------------------------------------
+
     virtual bool isRomanLanguage() override { return true; }
 
     //------------------------------------------------------------------------------
