@@ -6,6 +6,7 @@
 class ClockFace {
 public:
     void show(uint8_t hour, uint8_t minute);
+    void showCountdownToMidnight(uint8_t second);
 
 private:
     void showMinutes(uint8_t minute, uint8_t &offsetHour, bool &fullHour);

@@ -2,14 +2,16 @@
 
 #include "AutoBrightness.h"
 #include "ClockFace.h"
-#include "HardwareButtonController.h"
+#include "EffectModes.h"
+#include "HardwareButtons.h"
 #include <NeoPixelBus.h>
 
 class ClockWork {
 private:
     uint16_t countMillisSpeed = 0;
     uint32_t previousMillis = 0;
-    HardwareButtonController hardwareButtonController;
+    HardwareButtons hardwareButtons;
+    EffectModes effectModes;
     ClockFace clockFace;
     AutoBrightness autoBrightness;
 
@@ -17,38 +19,8 @@ private:
     //------------------------------------------------------------------------------
     // Helper Functions
     //------------------------------------------------------------------------------
-    void loopHardwareButtons();
-    void handleHardwareButtonAction(HardwareButtonAction action);
-    void toggleHardwareButtonPower();
-    void nextHardwareButtonMode();
-    void nextHardwareButtonTransition();
-    void increaseHardwareButtonBrightness();
-    void nextHardwareButtonHue();
-    void requestHardwareButtonDisplayRefresh();
     uint32_t allColumnsMask();
     void reallocateSecondsFrame();
-
-    //------------------------------------------------------------------------------
-    // Front Effect Functions
-    //------------------------------------------------------------------------------
-    struct StaticScrollingText {
-        uint8_t start = 0;
-        uint8_t len = 0;
-        uint8_t width = 0;
-        uint8_t height = 0;
-        uint8_t totalWidth = 0;
-        bool onlyDigits = true;
-    };
-
-    void rainbow();
-    void rainbowCycle();
-    void fire();
-    bool getStaticScrollingTextInfo(const char *buf, StaticScrollingText &info);
-    void displayStaticScrollingText(const char *buf,
-                                    const StaticScrollingText &info);
-    void scrollingText(const char *buf);
-    void displaySymbols(BitmapSymbol bitmapSymbol);
-    void countdownToMidnight();
 
     //------------------------------------------------------------------------------
     // Loop Helper Functions
@@ -61,7 +33,6 @@ private:
     void loopEveryMinute();
     void handleConfigCommand();
     void restart();
-    void sendI2CScan();
     void saveSettings();
     void saveAndRedraw();
     void saveAndRestartMode();
@@ -77,12 +48,6 @@ private:
     void applyHostname();
     void disableWifi();
     void resetWifi();
-    void sendMqttValues();
-    void sendConfigValues();
-    void sendBirthdays();
-    void sendColorValues();
-    void sendAutoBrightValues();
-    void sendTransitionValues();
     void applyHardwarePins();
     void applyClockType();
     void applySecondsFrame();

@@ -43,6 +43,58 @@ void ClockFace::show(uint8_t hour, uint8_t minute) {
 }
 
 //------------------------------------------------------------------------------
+
+void ClockFace::showCountdownToMidnight(uint8_t second) {
+    Serial.printf("Count down: %d\n", 60 - second);
+    switch (second) {
+    case 50:
+        if (!usedClockType->hasOnlyQuarterLayout()) {
+            usedClockType->show(FrontWord::min_10);
+        } else {
+            usedClockType->show(FrontWord::hour_10);
+        }
+        break;
+    case 51:
+        usedClockType->show(FrontWord::hour_9);
+        break;
+    case 52:
+        usedClockType->show(FrontWord::hour_8);
+        break;
+    case 53:
+        usedClockType->show(FrontWord::hour_7);
+        break;
+    case 54:
+        usedClockType->show(FrontWord::hour_6);
+        break;
+    case 55:
+        if (!usedClockType->hasOnlyQuarterLayout()) {
+            usedClockType->show(FrontWord::min_5);
+        } else {
+            usedClockType->show(FrontWord::hour_5);
+        }
+        break;
+    case 56:
+        usedClockType->show(FrontWord::hour_4);
+        break;
+    case 57:
+        usedClockType->show(FrontWord::hour_3);
+        break;
+    case 58:
+        usedClockType->show(FrontWord::hour_2);
+        break;
+    case 59:
+        if (usedClockType->usedLang() == LanguageAbbreviation::DE) {
+            usedClockType->show(FrontWord::eins);
+        } else {
+            usedClockType->show(FrontWord::hour_1);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+//------------------------------------------------------------------------------
 // Minutes
 //------------------------------------------------------------------------------
 
